@@ -1,13 +1,16 @@
 # -*- encoding:utf-8 -*-
 import sys
-
 sys.path.append('../../')
+
 import numpy as np
+
 from lightnn.models.NeuralNetwork import NetWork
+
 
 def gradient_check(nn, check_layer=0):
     """
     Check the gradient calculated by BP algorithm
+
     :param check_layer: The layer you want to make gradient check
     :return: None
     """
@@ -28,9 +31,10 @@ def gradient_check(nn, check_layer=0):
     print 'Value of W[{},0,0] is {}, real gradient is {}, ' \
           'and check gradient is {}'.format(check_layer, w, real_delta, check_delta)
 
+
 if __name__ == '__main__':
     from tensorflow.examples.tutorials.mnist import input_data
-    mnist = input_data.read_data_sets('../data', one_hot=True)
+    mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
     training_data = np.array([image.flatten() for image in mnist.train.images])
     training_label = mnist.train.labels
     net = NetWork([training_data[0].shape[0], 300, training_label[0].shape[0]], lmbda=0.1)

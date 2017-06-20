@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import numpy as np
 
+
 # --- sigmoid functions ---*
 
 def sigmoid(z):

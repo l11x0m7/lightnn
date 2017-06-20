@@ -1,5 +1,4 @@
 #-*- encoding:utf-8 -*-
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -7,6 +6,7 @@ from __future__ import print_function
 import sys
 
 import numpy as np
+
 from ..base.BasicFunctions import Sigmoid
 from ..base.Costs import CECost
 from ..base.Initializers import xavier_weight_initializer
@@ -102,6 +102,3 @@ class NetWork(object):
             cost += 0.5 * (self.lmbda / len(data)) * sum(
                 np.linalg.norm(layer.get_W())**2 for layer in self.layers)
         return cost
-
-
-

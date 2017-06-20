@@ -3,8 +3,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from BasicFunctions import sigmoid, delta_sigmoid
 import numpy as np
+
+from .BasicFunctions import sigmoid, delta_sigmoid
+
 
 class QuadraticCost(object):
     """
@@ -47,6 +49,7 @@ class CECost(object):
             return y_hat - y
         else:
             raise ValueError('You must make sure the last layer uses sigmoid activator!')
+
 
 class LogLikelihoodCost(object):
     @staticmethod

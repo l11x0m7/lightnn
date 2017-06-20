@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from distutils.core import setup  
+from distutils.core import setup
+from setuptools import find_packages
+
   
 PACKAGE = "lightnn"  
 NAME = "lightnn"  
@@ -15,18 +17,17 @@ setup(
         name=NAME,  
         version=VERSION,  
         description=DESCRIPTION,  
-        long_description=open("README.md", 'rb').readlines(),  
+        # long_description=open("README.md", 'rb').readlines(),  
         author=AUTHOR,  
         author_email=AUTHOR_EMAIL,  
         license="Apache License, Version 2.0",  
         url=URL,  
-        packages=["lightnn"],  
+        packages=find_packages('./'),  
         classifiers=[  
-                    "Development Status :: Developing",  
+                    "Development Status :: 3 - Alpha",  
                     "Intended Audience :: Developers",  
                     "Operating System :: OS Independent",  
                     "Programming Language :: Python",  
-                    "Framework :: Python original packages"
                 ],  
         zip_safe=False,  
     )  

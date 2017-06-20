@@ -1,5 +1,4 @@
 # -*- encoding:utf-8 -*-
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -7,6 +6,7 @@ from __future__ import print_function
 import sys
 
 import numpy as np
+
 from ..base.BasicFunctions import Sigmoid
 from ..base.Initializers import xavier_weight_initializer
 
@@ -53,9 +53,3 @@ class FullyConnectedLayer(object):
         delta_b = self.delta_b if delta_b is None else delta_b
         self.W -= delta_W
         self.b -= delta_b
-
-
-
-
-
-
