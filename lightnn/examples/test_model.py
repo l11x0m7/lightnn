@@ -25,7 +25,7 @@ def mlp_random():
     model.add(Dense(100, input_size=input_dim))
     model.add(Softmax(label_size))
     model.compile('CCE')
-    model.fit(train_X, train_y)
+    model.fit(train_X, train_y, verbose=1)
 
 
 def mlp_mnist():
@@ -40,7 +40,7 @@ def mlp_mnist():
     model = Sequential()
     model.add(Dense(300, input_size=input_dim, activator=Relu))
     model.add(Softmax(label_size))
-    model.compile('CCE', optimizer=SGD(lr=1e-2))
+    model.compile('CCE', optimizer=SGD())
     model.fit(training_data, training_label, validation_data=(valid_data, valid_label))
 
 
@@ -54,10 +54,13 @@ def cnn_random():
     for _ in xrange(input_size):
         train_y[_,np.random.randint(0, label_size)] = 1
     model =Sequential()
-    model.add(Conv2d((5, 5, 3), input_shape=(None, 28, 28, 1)))
+    model.add(Conv2d((3, 3), 1, input_shape=(None, 28, 28, 1),activator=Relu))
+    model.add(AvgPooling((2, 2), stride=2))
+    model.add(Conv2d((4, 4), 2, activator=Relu))
+    model.add(AvgPooling((2, 2), stride=2))
     model.add(Flatten())
     model.add(Softmax(label_size))
-    model.compile('CCE', optimizer=SGD(lr=1e-2))
+    model.compile('CCE', optimizer=SGD(1e-2))
     model.fit(train_X, train_y)
 
 
@@ -76,11 +79,11 @@ def cnn_mnist():
     model.add(AvgPooling((2, 2), stride=2))
     model.add(Flatten())
     model.add(Softmax(label_size))
-    model.compile('CCE', optimizer=SGD(lr=1e-1))
-    model.fit(training_data, training_label, validation_data=(valid_data, valid_label))
+    model.compile('CCE', optimizer=SGD())
+    model.fit(training_data, training_label, validation_data=(valid_data, valid_label), verbose=2)
 
 
 if __name__ == '__main__':
     # mlp_mnist()
-    cnn_mnist()
-    # cnn_random()
+    # cnn_mnist()
+    cnn_random()

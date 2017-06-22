@@ -155,7 +155,7 @@ class AvgPoolingLayer(object):
         self.output_shape = [self.input_shape[0], output_height,
                              output_width, self.input_shape[3]]
 
-    def forward(self, inputs):
+    def forward(self, inputs, *args, **kwargs):
         inputs = np.asarray(inputs)
         if inputs.ndim == 3:
             inputs = inputs[None,:,:,:]
@@ -188,7 +188,7 @@ class AvgPoolingLayer(object):
                     wb = 0; we = self.window_shape[1]
         return self.output
 
-    def backward(self, pre_delta_map):
+    def backward(self, pre_delta_map, *args, **kwargs):
         for idx_c in xrange(self.input_shape[3]):
             for bn in xrange(self.input_shape[0]):
                 wb = hb = 0

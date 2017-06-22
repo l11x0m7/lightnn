@@ -49,7 +49,7 @@ class BinaryCategoryLoss(Loss):
     def forward(y_hat, y):
         y_hat = _cutoff(y_hat)
         y = _cutoff(y)
-        return -np.sum(np.nan_to_num(y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat)))
+        return -np.mean(np.sum(np.nan_to_num(y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat)), axis=1))
 
     @staticmethod
     def backward(y_hat, y):
@@ -73,7 +73,9 @@ class LogLikelihoodLoss(Loss):
     def forward(y_hat, y):
         assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
         assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
-        return np.sum(np.nan_to_num(- y * np.log(y_hat)))
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
+        return -np.mean(np.sum(np.nan_to_num(y * np.log(y_hat)), axis=1))
 
     @staticmethod
     def backward(y_hat, y):
@@ -87,6 +89,8 @@ class LogLikelihoodLoss(Loss):
         """
         assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
         assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
         return y_hat - y
 
 

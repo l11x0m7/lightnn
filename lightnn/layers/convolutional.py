@@ -130,7 +130,7 @@ class Conv2d(Layer):
         self.filters = [Filter(list(self.filter_size) + [self.input_shape[3]], self.initializer)
                         for _ in xrange(self.filter_num)]
 
-    def forward(self, input):
+    def forward(self, input, *args, **kwargs):
         self.input = np.asarray(input)
         assert list(self.input_shape[1:]) == list(self.input.shape[1:])
         self.input_shape = self.input.shape
@@ -152,7 +152,7 @@ class Conv2d(Layer):
         self.output = self.activator.forward(self.logit)
         return self.output
 
-    def backward(self, pre_delta_map):
+    def backward(self, pre_delta_map, *args, **kwargs):
         self.__delta = np.zeros(self.input_shape)
         pre_delta_map = pre_delta_map * self.activator.backward(self.logit)
         expanded_pre_delta_map = self.__expand_sensitive_map(pre_delta_map)

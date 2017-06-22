@@ -70,17 +70,18 @@ class FullyConnected(Layer):
     def connection(self, pre_layer):
         if pre_layer is None:
             assert self.input_size is not None
+            self.output_shape = (None, self.output_size)
         else:
             self.input_size = pre_layer.output_shape[1]
             self.input_shape = pre_layer.output_shape
-        self.output_shape = (self.input_shape[0], self.output_size)
+            self.output_shape = (self.input_shape[0], self.output_size)
         self.__W = self.initializer([self.output_size, self.input_size])
         self.__b = self.initializer([self.output_size])
         self.__delta_W = np.zeros([self.output_size, self.input_size])
         self.__delta_b = np.zeros([self.output_size])
         self.__delta = np.zeros([self.input_size])
 
-    def forward(self, inputs):
+    def forward(self, inputs, *args, **kwargs):
         """
         :param inputs: 2-D tensors, row represents samples, col represents features
         :return: None
@@ -93,12 +94,13 @@ class FullyConnected(Layer):
         self.output = self.activator.forward(self.logit)
         return self.output
 
-    def backward(self, pre_delta):
+    def backward(self, pre_delta, *args, **kwargs):
         if len(pre_delta.shape) == 1:
             pre_delta = pre_delta[None,:]
         batch_size, _ = self.input.shape
         act_delta = pre_delta * self.activator.backward(self.logit)
-        self.delta_W = np.dot(act_delta.T, self.input) / batch_size
+        # here should calulate the average value of batch
+        self.delta_W = np.dot(act_delta.T, self.input)
         self.delta_b = np.mean(act_delta, axis=0)
         self.delta = np.dot(act_delta, self.W)
         return self.delta
@@ -132,12 +134,12 @@ class Flatten(Layer):
         self.input_shape = pre_layer.output_shape
         self.output_shape = self._compute_output_shape(self.input_shape)
 
-    def forward(self, input):
+    def forward(self, input, *args, **kwargs):
         self.input_shape = input.shape
         self.output_shape = self._compute_output_shape(self.input_shape)
         return np.reshape(input, self.output_shape)
 
-    def backward(self, pre_delta):
+    def backward(self, pre_delta, *args, **kwargs):
         return np.reshape(pre_delta, self.input_shape)
 
     def _compute_output_shape(self, input_shape):
@@ -149,3 +151,41 @@ class Flatten(Layer):
                              'or "batch_input_shape" argument to the first '
                              'layer in your model.')
         return (input_shape[0], np.prod(input_shape[1:]))
+
+
+class Dropout(Layer):
+    def __init__(self, dropout=0., axis=None):
+        self.dropout = dropout
+        self.axis = axis
+        self.mask = None
+
+    @property
+    def params(self):
+        return list()
+
+    @property
+    def grads(self):
+        return list()
+
+    def connection(self, pre_layer):
+        assert pre_layer is not None
+        if self.axis is None:
+            self.axis = range(len(pre_layer.output_shape))
+        self.output_shape = pre_layer.output_shape
+
+    def forward(self, inputs, is_train=True, *args, **kwargs):
+        self.input = inputs
+        if 0. < self.dropout < 1:
+            if is_train:
+                self.mask = np.random.binomial(1, 1 - self.dropout, np.asarray(self.input.shape)[self.axis])
+                return self.mask * self.input / (1 - self.dropout)
+            else:
+                return self.input * (1 - self.dropout)
+        else:
+            return self.input
+
+    def backward(self, pre_delta, *args, **kwargs):
+        if 0. < self.dropout < 1.:
+            return self.mask * pre_delta
+        else:
+            return pre_delta

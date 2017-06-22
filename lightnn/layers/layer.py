@@ -11,8 +11,8 @@ class Layer(object):
     def grads(self):
         raise NotImplementedError('function `get_grads` should be implemented')
 
-    def forward(self, input):
+    def forward(self, inputs, *args, **kwargs):
         raise NotImplementedError('function `forward` should be implemented')
 
-    def backward(self, pre_delta):
+    def backward(self, pre_delta, *args, **kwargs):
         raise NotImplementedError('function `backward` should be implemented')

@@ -49,7 +49,7 @@ class Sequential(object):
 
 
     def fit(self, X, y, max_iter=100, batch_size=64, shuffle=True,
-            validation_split=0., validation_data=None, file=sys.stdout):
+            validation_split=0., validation_data=None, verbose=1, file=sys.stdout):
 
         # prepare data
         train_X = X.astype(np.float64) if not np.issubdtype(np.float64, X.dtype) else X
@@ -70,7 +70,7 @@ class Sequential(object):
 
             # shuffle
             if shuffle:
-                seed = np.random.randint(47)
+                seed = np.random.randint(1107)
                 np.random.seed(seed)
                 np.random.shuffle(train_X)
                 np.random.seed(seed)
@@ -85,7 +85,7 @@ class Sequential(object):
                 y_batch = train_y[batch_begin:batch_end]
 
                 # forward propagation
-                y_pred = self.predict(x_batch)
+                y_pred = self.predict(x_batch, is_train=True)
 
                 # backward propagation
                 next_grad = self.loss.backward(y_pred, y_batch)
@@ -106,10 +106,11 @@ class Sequential(object):
                 train_losses.append(self.loss.forward(y_pred, y_batch))
                 train_predicts.extend(y_pred)
                 train_targets.extend(y_batch)
-                runout = "iter %d, batch %d, train-[loss %.4f, acc %.4f]; " % (
-                    iter_idx, b + 1, float(np.mean(train_losses)),
-                    float(self.accuracy(train_predicts, train_targets)))
-                print(runout, file=file)
+                if verbose == 2:
+                    runout = "iter %d, batch %d, train-[loss %.4f, acc %.4f]; " % (
+                        iter_idx, b + 1, float(np.mean(train_losses)),
+                        float(self.accuracy(train_predicts, train_targets)))
+                    print(runout, file=file)
 
             # output train status
             runout = "iter %d, train-[loss %.4f, acc %.4f]; " % (
@@ -126,7 +127,7 @@ class Sequential(object):
                     y_batch = valid_y[batch_begin:batch_end]
 
                     # forward propagation
-                    y_pred = self.predict(x_batch)
+                    y_pred = self.predict(x_batch, is_train=False)
 
                     # got loss and predict
                     valid_losses.append(self.loss.forward(y_pred, y_batch))
@@ -137,13 +138,14 @@ class Sequential(object):
                 runout += "valid-[loss %.4f, acc %.4f]; " % (
                     float(np.mean(valid_losses)), float(self.accuracy(valid_predicts, valid_targets)))
 
-            print(runout, file=file)
+            if verbose > 0:
+                print(runout, file=file)
 
-    def predict(self, X):
+    def predict(self, X, is_train=False):
         """ Calculate an output Y for the given input X. """
         x_next = X
         for layer in self.layers[:]:
-            x_next = layer.forward(x_next)
+            x_next = layer.forward(x_next, is_train=is_train)
         y_pred = x_next
         return y_pred
 
