@@ -16,10 +16,6 @@ class Filter(object):
     def __init__(self, filter_shape, initializer):
         assert len(filter_shape) == 3
         self.filter_shape = filter_shape
-        # filter_height, filter_width, filter_channel = filter_shape
-        # self.filter_height = filter_height
-        # self.filter_width = filter_width
-        # self.filter_channel = filter_channel
         self.__W = initializer(filter_shape)
         self.__b = 0.
         self.__delta_W = np.zeros(filter_shape)
@@ -84,10 +80,6 @@ class Conv2d(Layer):
         self.filter_size = filter_size
         self.filter_num = filter_num
         self.output_shape = None
-        # filter_height, filter_width, filter_num = self.filter_shape
-        # self.filter_height = filter_height
-        # self.filter_width = filter_width
-        # self.filter_num = filter_num
         self.zero_padding = zero_padding
         self.activator = activator
         self.initializer = initializer
@@ -129,12 +121,6 @@ class Conv2d(Layer):
             self.input_shape = pre_layer.output_shape
 
         assert len(self.input_shape) == 4
-        # calc input shape
-        # input_batch, input_height, input_width, input_channel = self.input_shape
-        # self.input_batch = input_batch
-        # self.input_height = input_height
-        # self.input_width = input_width
-        # self.input_channel = input_channel
 
         # calc output shape
         if self.output_shape is None:

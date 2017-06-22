@@ -25,41 +25,17 @@ class Sequential(object):
     def compile(self, loss, optimizer='sgd', **kwargs):
         """Configures the model for training.
         # Arguments
-            optimizer: str (name of optimizer) or optimizer object.
-                See [optimizers](/optimizers).
             loss: str (name of objective function) or objective function.
                 See [losses](/losses).
                 If the model has multiple outputs, you can use a different loss
                 on each output by passing a dictionary or a list of losses.
                 The loss value that will be minimized by the model
                 will then be the sum of all individual losses.
-            metrics: list of metrics to be evaluated by the model
-                during training and testing.
-                Typically you will use `metrics=['accuracy']`.
-                To specify different metrics for different outputs of a
-                multi-output model, you could also pass a dictionary,
-                such as `metrics={'output_a': 'accuracy'}`.
-            loss_weights: Optional list or dictionary specifying scalar
-                coefficients (Python floats) to weight the loss contributions
-                of different model outputs.
-                The loss value that will be minimized by the model
-                will then be the *weighted sum* of all individual losses,
-                weighted by the `loss_weights` coefficients.
-                If a list, it is expected to have a 1:1 mapping
-                to the model's outputs. If a tensor, it is expected to map
-                output names (strings) to scalar coefficients.
-            sample_weight_mode: if you need to do timestep-wise
-                sample weighting (2D weights), set this to `"temporal"`.
-                `None` defaults to sample-wise weights (1D).
-                If the model has multiple outputs, you can use a different
-                `sample_weight_mode` on each output by passing a
-                dictionary or a list of modes.
-            **kwargs: when using the Theano backend, these arguments
-                are passed into K.function. When using the Tensorflow backend,
-                these arguments are passed into `tf.Session.run`.
+            optimizer: str (name of optimizer) or optimizer object.
+                See [optimizers](/optimizers).
         # Raises
             ValueError: In case of invalid arguments for
-                `optimizer`, `loss`, `metrics` or `sample_weight_mode`.
+                `optimizer`, `loss`.
         """
         loss = loss or None
         optimizer = optimizer or None
@@ -139,9 +115,6 @@ class Sequential(object):
             runout = "iter %d, train-[loss %.4f, acc %.4f]; " % (
                 iter_idx, float(np.mean(train_losses)),
                 float(self.accuracy(train_predicts, train_targets)))
-
-            # runout = "iter %d, train-[loss %.4f, ]; " % (
-            #     iter_idx, float(np.mean(train_losses)))
 
             if valid_X is not None and valid_y is not None:
                 # valid
