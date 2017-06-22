@@ -1,0 +1,112 @@
+# -*- encoding:utf-8 -*-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import numpy as np
+
+
+cutoff = 1e-12
+def _cutoff(z):
+    return np.clip(z, cutoff, 1 - cutoff)
+
+
+class Loss(object):
+    @staticmethod
+    def forward(y_hat, y):
+        raise NotImplementedError('forward function must be implemented.')
+
+    @staticmethod
+    def backward(y_hat, y):
+        raise NotImplementedError('forward function must be implemented.')
+
+
+class MeanSquareLoss(Loss):
+    """
+    calculate the MSE
+    """
+    @staticmethod
+    def forward(y_hat, y, norm=2):
+        """
+        the default vector norm is : sum(abs(x)**2) / 2
+        :param y_hat: vector, output from your network
+        :param y: vector, the ground truth
+        :return: scalar, the cost
+        """
+        # return 0.5 * np.linalg.norm(y_hat - y, ord=norm)
+        return 0.5 * np.sum(np.power(y_hat - y, 2))
+
+    @staticmethod
+    def backward(y_hat, y):
+        return y_hat - y
+
+
+class BinaryCategoryLoss(Loss):
+    """
+        二分类的log损失,主要用于前一层为sigmod层的情况
+    """
+    @staticmethod
+    def forward(y_hat, y):
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
+        return -np.sum(np.nan_to_num(y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat)))
+
+    @staticmethod
+    def backward(y_hat, y):
+        """
+        :param y_hat:
+        :param y:
+        :param activator:
+        :return:
+        """
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
+        divisor = y_hat * (1 - y_hat)
+        return (y_hat - y) / divisor
+
+
+class LogLikelihoodLoss(Loss):
+    """
+        多分类的log loss, 主要用于前一层为softmax的情况
+    """
+    @staticmethod
+    def forward(y_hat, y):
+        assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
+        assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
+        return np.sum(np.nan_to_num(- y * np.log(y_hat)))
+
+    @staticmethod
+    def backward(y_hat, y):
+        """
+        The loss partial by z is : y_hat * (y - y_hat) / (-1 / y_hat) = y_hat - y
+        softmax + loglikelihoodCost == sigmoid + crossentropyCost
+        :param y_hat:
+        :param y:
+        :param activator:
+        :return:
+        """
+        assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
+        assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
+        return y_hat - y
+
+
+# aliases from Keras
+mse = MSE = MeanSquareLoss
+cce = CCE = LogLikelihoodLoss
+bce = BCE = BinaryCategoryLoss
+
+
+def get(loss):
+    if isinstance(loss, str):
+        if loss in ('mse', 'MSE', 'MeanSquareLoss'):
+            return MSE()
+        elif loss in ('cce', 'CCE', 'LogLikelihoodLoss'):
+            return CCE()
+        elif loss in ('bce', 'BCE', 'BinaryCategoryLoss'):
+            return BCE()
+        else:
+            raise ValueError('Unknown loss name `{}`'.format(loss))
+    elif isinstance(loss, Loss):
+        return loss
+    else:
+        raise ValueError('Unknown loss type `{}`'.format(loss.__class__.__name__))

@@ -7,7 +7,7 @@ from __future__ import print_function
 import numpy as np
 
 
-def xavier_weight_initializer(shape):
+def xavier_uniform_initializer(shape):
     """Defines an initializer for the Xavier distribution.
 
     This function will be used as a variable scope initializer.
@@ -21,6 +21,9 @@ def xavier_weight_initializer(shape):
     bound = np.sqrt(6. / (m + n))
     out = np.random.uniform(-bound, bound, shape)
     return out
+
+
+glorot_uniform_initializer = xavier_uniform_initializer
 
 
 def default_weight_initializer(shape):

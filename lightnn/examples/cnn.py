@@ -4,11 +4,11 @@ sys.path.append('../../')
 
 import numpy as np
 
-from lightnn.layers.ConvLayer import ConvLayer
-from lightnn.layers.PoolingLayer import MaxPoolingLayer, AvgPoolingLayer
-from lightnn.base.BasicFunctions import Sigmoid, Relu, Identity
-from lightnn.base.Costs import CECost
-from lightnn.base.Initializers import xavier_weight_initializer
+from lightnn.layers.convolutional import Conv
+from lightnn.layers.pooling import MaxPoolingLayer, AvgPoolingLayer
+from lightnn.base.activations import Sigmoid, Relu, Identity
+from lightnn.base.losses import LogLikelihoodLoss, MeanSquareLoss
+from lightnn.base.initializers import xavier_uniform_initializer
 
 
 def conv_gradient_check():
@@ -43,7 +43,7 @@ def conv_gradient_check():
         a = a.transpose([1,2,0])
         b = b.transpose([1,2,0])
         # debug point : when `stride` is `[1, 1]`, the function runs in error states
-        cl = ConvLayer(5,5,3,3,3,2,3,[4, 4],activator=activator,initializer=xavier_weight_initializer,lr=0.001)
+        cl = Conv(5,5,3,3,3,2,1,[1, 1],activator=activator,initializer=xavier_uniform_initializer,lr=0.001)
         cl.filters[0].weights = np.array(
             [[[-1,1,0],
               [0,1,0],
@@ -72,14 +72,14 @@ def conv_gradient_check():
     """
 
     # 设计一个误差函数，取所有节点输出项之和
-    error_function = lambda o: o.sum()
+    error_function = lambda o : np.sum(o) / 2
     # 计算forward值
     a, b, cl = init_test()
     output = cl.forward(a)
     print np.transpose(output, [2, 0, 1])
     # 求取sensitivity map，是一个全1数组
-    sensitivity_array = activator.backward(output) * np.ones(cl.output.shape,
-                                dtype=np.float64)
+    sensitivity_array =  np.ones(cl.output.shape,
+                                dtype=np.float64) / 2
     # 计算梯度
     cl.backward(sensitivity_array)
     # 检查梯度

@@ -1,6 +1,4 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from .NeuralNetwork import NetWork
-
-
+from models import *

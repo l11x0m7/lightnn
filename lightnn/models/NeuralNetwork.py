@@ -3,26 +3,26 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import numpy as np
 
-from ..base.BasicFunctions import Sigmoid
-from ..base.Costs import CECost
-from ..base.Initializers import xavier_weight_initializer
-from ..layers.FullyConnectedLayer import FullyConnectedLayer
+from ..base.activations import Sigmoid, Softmax
+from ..base.losses import LogLikelihoodLoss
+from ..base.initializers import xavier_uniform_initializer
+from ..layers.core import FullyConnected
 
 
 class NetWork(object):
-    def __init__(self, sizes, cost=CECost, activator=Sigmoid, initializer=xavier_weight_initializer, lr=1e-1, lmbda=None):
+    def __init__(self, sizes, cost=LogLikelihoodLoss, activator=Sigmoid, initializer=xavier_uniform_initializer, lr=1e-1, lmbda=None):
         self.sizes = sizes
         self.layer_num = len(sizes)
         self.cost = cost
         self.lr = lr
         self.lmbda = lmbda
-        self.layers = [FullyConnectedLayer(i_size, o_size,
+        self.layers = [FullyConnected(i_size, o_size,
                             activator, initializer) for i_size, o_size
                                 in zip(sizes[:-1], sizes[1:])]
+        if self.layers[-1].output_size > 2:
+            self.layers[-1].activator = Softmax
 
     def train(self, input_data, input_label, epoch, batch_size, verbose=True):
         for ep in xrange(epoch):
@@ -39,8 +39,8 @@ class NetWork(object):
                     accuracy, len(input_data)))
 
     def train_batch(self, mini_batch, batch_label, training_set_n):
-        batch_delta_W = [np.zeros(layer.get_W().shape) for layer in self.layers]
-        batch_delta_b = [np.zeros(layer.get_b().shape) for layer in self.layers]
+        batch_delta_W = [np.zeros(layer.W.shape) for layer in self.layers]
+        batch_delta_b = [np.zeros(layer.b.shape) for layer in self.layers]
         for x, y in zip(mini_batch, batch_label):
             self.feedforward(x)
             self.backprop(y)
@@ -54,7 +54,7 @@ class NetWork(object):
             update_delta_W = batch_delta_W[i] * self.lr / len(mini_batch)
             update_delta_b = batch_delta_b[i] * self.lr / len(mini_batch)
             if self.lmbda is not None:
-                update_delta_W += self.lmbda * self.lr * layer.get_W() / training_set_n
+                update_delta_W += self.lmbda * self.lr * layer.W / training_set_n
             layer.step(update_delta_W, update_delta_b)
 
 
@@ -65,16 +65,16 @@ class NetWork(object):
         :param y: single one hot output label
         :return: None
         """
-        delta = self.cost.delta(self.layers[-1].logit, self.layers[-1].output, y)
-        self.layers[-1].update_delta(delta)
-        for l in xrange(2, self.layer_num):
-            delta = self.layers[-l].backward(pre_delta=delta, pre_W=self.layers[-l+1].W)
-
+        delta = self.cost.backward(self.layers[-1].output, y)
+        for layer in self.layers[::-1]:
+            delta = layer.backward(pre_delta=delta)
 
     def feedforward(self, x):
         output = x
         for layer in self.layers:
             output = layer.forward(output)
+            print(output)
+            print(layer.W)
         return output
 
     def __batch_sample(self, batch_epoch, batch_size, input_data, input_label):
@@ -97,8 +97,8 @@ class NetWork(object):
         for x, y in zip(data, label):
             self.feedforward(x)
             a = self.layers[-1].output
-            cost += self.cost.cost(a, y) / len(data)
+            cost += self.cost.forward(a, y) / len(data)
         if self.lmbda is not None:
             cost += 0.5 * (self.lmbda / len(data)) * sum(
-                np.linalg.norm(layer.get_W())**2 for layer in self.layers)
+                np.linalg.norm(layer.W)**2 for layer in self.layers)
         return cost
