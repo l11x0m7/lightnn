@@ -51,6 +51,14 @@ lightnn
 * sigmoid
 * relu
 * softmax
+* tanh
+* leaky relu
+* elu
+* selu
+* thresholded relu
+* softplus
+* softsign
+* hard sigmoidoscopy
 
 ### losses
 
@@ -71,6 +79,9 @@ lightnn
 ### layers
 
 * FullyConnected(Dense)
+* Conv2d
+* MaxPooling
+* AvgPooling
 * Softmax
 * Dropout
 * Flatten

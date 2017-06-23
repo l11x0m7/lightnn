@@ -96,17 +96,17 @@ class LogLikelihoodLoss(Loss):
 
 # aliases from Keras
 mse = MSE = MeanSquareLoss
-cce = CCE = LogLikelihoodLoss
-bce = BCE = BinaryCategoryLoss
+cce = CCE = categorical_crossentropy = LogLikelihoodLoss
+bce = BCE = binary_crossentropy = BinaryCategoryLoss
 
 
 def get(loss):
     if isinstance(loss, str):
         if loss in ('mse', 'MSE', 'MeanSquareLoss'):
             return MSE()
-        elif loss in ('cce', 'CCE', 'LogLikelihoodLoss'):
+        elif loss in ('categorical_crossentropy', 'cce', 'CCE', 'LogLikelihoodLoss'):
             return CCE()
-        elif loss in ('bce', 'BCE', 'BinaryCategoryLoss'):
+        elif loss in ('binary_crossentropy', 'bce', 'BCE', 'BinaryCategoryLoss'):
             return BCE()
         else:
             raise ValueError('Unknown loss name `{}`'.format(loss))
