@@ -89,3 +89,10 @@ lightnn
 
 
 For details, please visit [skyhigh233](http://skyhigh233.com).
+
+## References
+1. [Keras](https://github.com/fchollet/keras): a polular deep learning framework based on tensorflow and theano.
+2. [NumpyDL](https://github.com/oujago/NumpyDL): a simple deep learning framework with manual-grad, totally written with python and numpy.
+3. [paradox](https://github.com/ictxiangxin/paradox): a simple deep learning framework with symbol calculation system. Lightweight for learning and for fun. It's totally written with python and numpy.
+4. [Bingtao Han's blogs](https://zybuluo.com/hanbingtao/): easy way to go for deep learning.
+
