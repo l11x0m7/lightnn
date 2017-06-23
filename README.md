@@ -47,7 +47,7 @@ lightnn
 
 ### activations
 
-* identity
+* identity(dense)
 * sigmoid
 * relu
 * softmax
@@ -58,7 +58,7 @@ lightnn
 * thresholded relu
 * softplus
 * softsign
-* hard sigmoidoscopy
+* hard sigmoid
 
 ### losses
 
