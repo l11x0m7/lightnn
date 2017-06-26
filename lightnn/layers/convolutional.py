@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import numpy as np
 
+from ..base import activations
 from ..base.activations import Sigmoid, Relu, Identity
 from ..base.initializers import xavier_uniform_initializer
 from ..layers.layer import Layer
@@ -72,6 +73,7 @@ class Conv2d(Layer):
         """
 
         # expand zero padding
+        super(Conv2d, self).__init__()
         if isinstance(zero_padding, int):
             zero_padding = (zero_padding, zero_padding)
         # check params
@@ -81,7 +83,7 @@ class Conv2d(Layer):
         self.filter_num = filter_num
         self.output_shape = None
         self.zero_padding = zero_padding
-        self.activator = activator
+        self.activator = activations.get(activator)
         self.initializer = initializer
         self.stride = stride if isinstance(stride, list) or isinstance(stride, tuple) \
                                 else (stride, stride)
@@ -114,11 +116,18 @@ class Conv2d(Layer):
     def grads(self):
         return self.delta_W + self.delta_b
 
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
     def connection(self, pre_layer):
         if pre_layer is None:
-            assert self.input_shape is not None
+            if self.input_shape is None:
+                raise ValueError('input_shape must not be `None` as the first layer.')
         else:
             self.input_shape = pre_layer.output_shape
+            self.pre_layer = pre_layer
+            pre_layer.next_layer.append(self)
 
         assert len(self.input_shape) == 4
 

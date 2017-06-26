@@ -5,18 +5,20 @@ from __future__ import print_function
 
 import numpy as np
 
+from ..base import activations
 from ..base.activations import Sigmoid, Identity
 from ..base.initializers import xavier_uniform_initializer
-from ..layers.layer import Layer
+from ..layers.layer import Layer, Input
 from ..base.activations import Softmax as sm
 
 
 class FullyConnected(Layer):
-    def __init__(self, output_size, input_size=None, activator=Sigmoid,
+    def __init__(self, output_size, input_size=None, activator='sigmoid',
                     initializer=xavier_uniform_initializer):
+        super(FullyConnected, self).__init__()
         self.input_size = input_size
         self.output_size = output_size
-        self.activator = activator if activator is not None else Identity
+        self.activator = activations.get(activator)
         self.initializer = initializer
 
     @property
@@ -67,11 +69,18 @@ class FullyConnected(Layer):
     def grads(self):
         return [self.delta_W, self.delta_b]
 
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
     def connection(self, pre_layer):
+        self.pre_layer = pre_layer
         if pre_layer is None:
-            assert self.input_size is not None
+            if self.input_size is None:
+                raise ValueError('input_size must not be `None` as the first layer.')
             self.output_shape = (None, self.output_size)
         else:
+            pre_layer.next_layer.append(self)
             self.input_size = pre_layer.output_shape[1]
             self.input_shape = pre_layer.output_shape
             self.output_shape = (self.input_shape[0], self.output_size)
@@ -113,12 +122,12 @@ class Softmax(Dense):
     def __init__(self, output_size, input_size=None,
                     initializer=xavier_uniform_initializer):
         super(Softmax, self).__init__(output_size=output_size, input_size=input_size,
-                                      activator=sm, initializer=initializer)
+                                      activator='softmax', initializer=initializer)
 
 
 class Flatten(Layer):
     def __init__(self):
-        pass
+        super(Flatten, self).__init__()
 
     @property
     def params(self):
@@ -128,9 +137,15 @@ class Flatten(Layer):
     def grads(self):
         return list()
 
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
     def connection(self, pre_layer):
-        if pre_layer == None:
+        if pre_layer is None:
             raise ValueError('Flatten could not be used as the first layer')
+        self.pre_layer = pre_layer
+        pre_layer.next_layer.append(self)
         self.input_shape = pre_layer.output_shape
         self.output_shape = self._compute_output_shape(self.input_shape)
 
@@ -155,6 +170,7 @@ class Flatten(Layer):
 
 class Dropout(Layer):
     def __init__(self, dropout=0., axis=None):
+        super(Dropout, self).__init__()
         self.dropout = dropout
         self.axis = axis
         self.mask = None
@@ -167,11 +183,18 @@ class Dropout(Layer):
     def grads(self):
         return list()
 
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
     def connection(self, pre_layer):
-        assert pre_layer is not None
+        if pre_layer is None:
+            raise ValueError('Dropout could not be used as the first layer')
         if self.axis is None:
             self.axis = range(len(pre_layer.output_shape))
         self.output_shape = pre_layer.output_shape
+        self.pre_layer = pre_layer
+        pre_layer.next_layer.append(self)
 
     def forward(self, inputs, is_train=True, *args, **kwargs):
         self.input = inputs

@@ -10,6 +10,7 @@ from ..layers.layer import Layer
 
 class MaxPoolingLayer(Layer):
     def __init__(self, window_shape, input_shape=None, stride=1, zero_padding=0):
+        super(MaxPoolingLayer, self).__init__()
         self.input_shape = input_shape
         if isinstance(zero_padding, int):
             zero_padding = (zero_padding, zero_padding)
@@ -34,11 +35,18 @@ class MaxPoolingLayer(Layer):
     def grads(self):
         return list()
 
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
     def connection(self, pre_layer):
         if pre_layer is None:
-            assert self.input_shape is not None
+            if self.input_shape is None:
+                raise ValueError('input_shape must not be `None` as the first layer.')
         else:
             self.input_shape = pre_layer.output_shape
+            self.pre_layer = pre_layer
+            pre_layer.next_layer.append(self)
 
         output_height = (self.input_shape[1] + self.zero_padding[0] * 2
                               - self.window_shape[0]) // self.stride[0] + 1
@@ -47,7 +55,7 @@ class MaxPoolingLayer(Layer):
         self.output_shape = [self.input_shape[0], output_height,
                              output_width, self.input_shape[3]]
 
-    def forward(self, inputs):
+    def forward(self, inputs, *args, **kwargs):
         inputs = np.asarray(inputs)
         if inputs.ndim == 3:
             inputs = inputs[None,:,:,:]
@@ -82,7 +90,7 @@ class MaxPoolingLayer(Layer):
                     wb = 0; we = self.window_shape[1]
         return self.output
 
-    def backward(self, pre_delta_map):
+    def backward(self, pre_delta, *args, **kwargs):
         for idx_c in xrange(self.input_shape[3]):
             for bn in xrange(self.output_shape[0]):
                 for i in xrange(self.output_shape[1]):
@@ -94,7 +102,7 @@ class MaxPoolingLayer(Layer):
                             continue
                         x -= self.zero_padding[0]
                         y -= self.zero_padding[1]
-                        self.__delta[bn,x,y,idx_c] += pre_delta_map[bn,i,j,idx_c]
+                        self.__delta[bn,x,y,idx_c] += pre_delta[bn,i,j,idx_c]
         return self.__delta
 
     def padding(self, inputs, zero_padding):
@@ -116,8 +124,9 @@ class MaxPoolingLayer(Layer):
             raise ValueError('Your input must be a 3-D or 4-D tensor.')
 
 
-class AvgPoolingLayer(object):
+class AvgPoolingLayer(Layer):
     def __init__(self, window_shape, input_shape=None, stride=1, zero_padding=0):
+        super(AvgPoolingLayer, self).__init__()
         self.input_shape = input_shape
         if isinstance(zero_padding, int):
             zero_padding = (zero_padding, zero_padding)
@@ -142,11 +151,18 @@ class AvgPoolingLayer(object):
     def grads(self):
         return list()
 
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
     def connection(self, pre_layer):
         if pre_layer is None:
-            assert self.input_shape is not None
+            if self.input_shape is None:
+                raise ValueError('input_shape must not be `None` as the first layer.')
         else:
             self.input_shape = pre_layer.output_shape
+            self.pre_layer = pre_layer
+            pre_layer.next_layer.append(self)
 
         output_height = (self.input_shape[1] + self.zero_padding[0] * 2
                               - self.window_shape[0]) // self.stride[0] + 1
@@ -188,7 +204,7 @@ class AvgPoolingLayer(object):
                     wb = 0; we = self.window_shape[1]
         return self.output
 
-    def backward(self, pre_delta_map, *args, **kwargs):
+    def backward(self, pre_delta, *args, **kwargs):
         for idx_c in xrange(self.input_shape[3]):
             for bn in xrange(self.input_shape[0]):
                 wb = hb = 0
@@ -196,7 +212,7 @@ class AvgPoolingLayer(object):
                 we = self.window_shape[1]
                 for i in xrange(self.output_shape[1]):
                     for j in xrange(self.output_shape[2]):
-                        self.__delta[bn,hb:he,wb:we,idx_c] += (pre_delta_map[bn,i,j,idx_c] \
+                        self.__delta[bn,hb:he,wb:we,idx_c] += (pre_delta[bn,i,j,idx_c] \
                             / float(np.prod(self.window_shape)))
                         wb += self.stride[1]
                         we += self.stride[1]

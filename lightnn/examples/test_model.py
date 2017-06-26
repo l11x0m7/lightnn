@@ -6,7 +6,7 @@ from __future__ import print_function
 import numpy as np
 
 from lightnn.models.models import Sequential
-from lightnn.layers.core import Dense, Flatten, Softmax
+from lightnn.layers.core import Dense, Flatten, Softmax, Input, Dropout
 from lightnn.layers.convolutional import Conv2d
 from lightnn.layers.pooling import MaxPooling, AvgPooling
 from lightnn.base.activations import Relu
@@ -22,7 +22,8 @@ def mlp_random():
     for _ in xrange(input_size):
         train_y[_,np.random.randint(0, label_size)] = 1
     model = Sequential()
-    model.add(Dense(100, input_size=input_dim))
+    model.add(Input(input_shape=input_dim))
+    model.add(Dense(100, activator='selu'))
     model.add(Softmax(label_size))
     model.compile('CCE')
     model.fit(train_X, train_y, verbose=1)
@@ -38,7 +39,9 @@ def mlp_mnist():
     input_dim = training_data.shape[1]
     label_size = training_label.shape[1]
     model = Sequential()
-    model.add(Dense(300, input_size=input_dim, activator=Relu))
+    model.add(Input(input_shape=(input_dim, )))
+    model.add(Dense(300, activator='selu'))
+    model.add(Dropout(0.2))
     model.add(Softmax(label_size))
     model.compile('CCE', optimizer=SGD())
     model.fit(training_data, training_label, validation_data=(valid_data, valid_label))
@@ -54,9 +57,10 @@ def cnn_random():
     for _ in xrange(input_size):
         train_y[_,np.random.randint(0, label_size)] = 1
     model =Sequential()
-    model.add(Conv2d((3, 3), 1, input_shape=(None, 28, 28, 1),activator=Relu))
+    model.add(Input(batch_input_shape=(None, 28, 28, 1)))
+    model.add(Conv2d((3, 3), 1, activator='relu'))
     model.add(AvgPooling((2, 2), stride=2))
-    model.add(Conv2d((4, 4), 2, activator=Relu))
+    model.add(Conv2d((4, 4), 2, activator='relu'))
     model.add(AvgPooling((2, 2), stride=2))
     model.add(Flatten())
     model.add(Softmax(label_size))
@@ -73,17 +77,33 @@ def cnn_mnist():
     valid_label = mnist.validation.labels
     label_size = training_label.shape[1]
     model =Sequential()
-    model.add(Conv2d((3, 3), 1, input_shape=(None, 28, 28, 1),activator=Relu))
+    model.add(Input(batch_input_shape=(None, 28, 28, 1)))
+    model.add(Conv2d((3, 3), 1, activator='selu'))
     model.add(AvgPooling((2, 2), stride=2))
-    model.add(Conv2d((4, 4), 2, activator=Relu))
+    model.add(Conv2d((4, 4), 2, activator='selu'))
     model.add(AvgPooling((2, 2), stride=2))
     model.add(Flatten())
     model.add(Softmax(label_size))
-    model.compile('CCE', optimizer=SGD())
+    model.compile('CCE', optimizer=SGD(lr=1e-2))
     model.fit(training_data, training_label, validation_data=(valid_data, valid_label), verbose=2)
+
+class Test():
+    def __init__(self):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return self.call(*args, **kwargs)
+
+    def call(self, val, *args, **kwargs):
+        print('Call')
+        return val
 
 
 if __name__ == '__main__':
+    # mlp_random()
     # mlp_mnist()
+    # cnn_random()
     # cnn_mnist()
-    cnn_random()
+    t = Test()(2)
+    print(t)
+

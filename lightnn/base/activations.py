@@ -309,6 +309,8 @@ class HardSigmoid(Activator):
 
 
 def get(activator):
+    if activator is None:
+        return Identity()
     if isinstance(activator, str):
         if activator in ['linear', 'Linear', 'identity', 'Identity']:
             return Identity()
