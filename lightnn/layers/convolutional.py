@@ -87,6 +87,8 @@ class Conv2d(Layer):
         self.initializer = initializer
         self.stride = stride if isinstance(stride, list) or isinstance(stride, tuple) \
                                 else (stride, stride)
+        if self.input_shape is not None:
+            self.connection(None)
 
     @property
     def delta(self):
@@ -127,7 +129,7 @@ class Conv2d(Layer):
         else:
             self.input_shape = pre_layer.output_shape
             self.pre_layer = pre_layer
-            pre_layer.next_layer.append(self)
+            pre_layer.next_layer = self
 
         assert len(self.input_shape) == 4
 

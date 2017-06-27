@@ -13,8 +13,34 @@ from ..base import losses
 
 
 class Sequential(object):
-    """
-        Model class
+    """Linear stack of layers.
+    # Arguments
+        layers: list of layers to add to the model.
+    # Note
+        The first layer passed to a Sequential model
+        should have a defined input shape. What that
+        means is that it should have received an `input_shape`
+        or `batch_input_shape` argument,
+        or for some type of layers (recurrent, Dense...)
+        an `input_dim` argument.
+    # Example
+        ```python
+            model = Sequential()
+            # first layer must have a defined input shape
+            model.add(Dense(32, input_dim=500))
+            # afterwards, Keras does automatic shape inference
+            model.add(Dense(32))
+            # also possible (equivalent to the above):
+            model = Sequential()
+            model.add(Dense(32, input_shape=(500,)))
+            model.add(Dense(32))
+            # also possible (equivalent to the above):
+            model = Sequential()
+            # here the batch dimension is None,
+            # which means any batch size will be accepted by the model.
+            model.add(Dense(32, batch_input_shape=(None, 500)))
+            model.add(Dense(32))
+        ```
     """
     def __init__(self):
         self.layers = list()
@@ -157,9 +183,37 @@ class Sequential(object):
 
 
 class Model(object):
-    def __main__(self, inputs, outputs):
-        self.inputs = inputs
-        self.outputs = outputs
+    """Layers with multiple input and multiple output.
+    # Arguments
+        input: the input layer
+        output: the output layer
+    # Note
+        The first layer passed to a Model model
+        should have a defined input shape. What that
+        means is that it should have received an `input_shape`
+        or `batch_input_shape` argument,
+        or for some type of layers (recurrent, Dense...)
+        an `input_dim` argument.
+    # TODO
+        Add the multiple input and multiple output form, now it's similar
+        to Sequential model.
+    # Example
+        ```python
+            # first layer must have a defined input shape
+            input = Input(input_shape=(input_dim, ))
+            dense_1 = Dense(300, activator='selu')(input)
+            dropout_1 = Dropout(0.2)(dense_1)
+            softmax_1 = Softmax(label_size)(dropout_1)
+            model = Model(input, softmax_1)
+            # also possible (equivalent to the above):
+            minput = Dense(32, input_dim=60)
+            output = Dense(32)(input)
+            model = Model(input, output)
+        ```
+    """
+    def __init__(self, input, output):
+        self.input = input
+        self.output = output
 
     def compile(self, loss, optimizer='sgd', **kwargs):
         """Configures the model for training.
@@ -220,8 +274,24 @@ class Model(object):
                 # forward propagation
                 y_pred = self.predict(x_batch, is_train=True)
 
-                # backward propagation and update parameters
-                self.__bp()
+                # backward propagation
+                next_grad = self.loss.backward(y_pred, y_batch)
+                pre_layer = self.output
+                while pre_layer is not None:
+                    next_grad = pre_layer.backward(next_grad)
+                    pre_layer = pre_layer.pre_layer
+
+                # get parameter and gradients
+                params = list()
+                grads = list()
+                pre_layer = self.output
+                while pre_layer is not None:
+                    params += pre_layer.params
+                    grads += pre_layer.grads
+                    pre_layer = pre_layer.pre_layer
+
+                # update parameters
+                self.optimizer.minimize(params, grads)
 
                 # got loss and predict
                 train_losses.append(self.loss.forward(y_pred, y_batch))
@@ -264,13 +334,15 @@ class Model(object):
 
     def predict(self, X, is_train=False):
         """ Calculate an output Y for the given input X. """
-        pass
+        layer = self.input
+        X_next = X
+        while layer is not None:
+            X_next = layer.forward(X_next)
+            layer = layer.next_layer
+        return X_next
 
     def accuracy(self, outputs, targets):
         y_predicts = np.argmax(outputs, axis=1)
         y_targets = np.argmax(targets, axis=1)
         acc = y_predicts == y_targets
         return np.mean(acc)
-
-    def __bp(self):
-        pass

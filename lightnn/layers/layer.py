@@ -8,7 +8,7 @@ class Layer(object):
         self.__input_shape = None
         self.__output_shape = None
         self.__pre_layer = None
-        self.__next_layer = list()
+        self.__next_layer = None
 
     @property
     def input_shape(self):
@@ -108,6 +108,7 @@ class Input(Layer):
 
         self.input_shape = batch_input_shape
         self.dtype = dtype
+        self.connection(None)
 
     @property
     def params(self):
@@ -123,14 +124,13 @@ class Input(Layer):
         self.output_shape = self.input_shape
 
     def call(self, pre_layer=None, *args, **kwargs):
-        self.connection(pre_layer)
-        return self
+        raise ValueError('Input layer is not callable.')
 
     def forward(self, inputs, *args, **kwargs):
         inputs = np.asarray(inputs)
-        assert self.__input_shape[1:] == inputs.shape[1:]
-        self.__input_shape = inputs.shape
-        self.__output_shape = self.__input_shape
+        assert self.input_shape[1:] == inputs.shape[1:]
+        self.input_shape = inputs.shape
+        self.output_shape = self.input_shape
         return inputs
 
     def backward(self, pre_delta, *args, **kwargs):

@@ -13,13 +13,15 @@ from ..base.activations import Softmax as sm
 
 
 class FullyConnected(Layer):
-    def __init__(self, output_size, input_size=None, activator='sigmoid',
+    def __init__(self, output_dim, input_dim=None, activator='sigmoid',
                     initializer=xavier_uniform_initializer):
         super(FullyConnected, self).__init__()
-        self.input_size = input_size
-        self.output_size = output_size
+        self.input_dim = input_dim
+        self.output_dim = output_dim
         self.activator = activations.get(activator)
         self.initializer = initializer
+        if self.input_dim is not None:
+            self.connection(None)
 
     @property
     def W(self):
@@ -76,19 +78,19 @@ class FullyConnected(Layer):
     def connection(self, pre_layer):
         self.pre_layer = pre_layer
         if pre_layer is None:
-            if self.input_size is None:
+            if self.input_dim is None:
                 raise ValueError('input_size must not be `None` as the first layer.')
-            self.output_shape = (None, self.output_size)
+            self.output_shape = (None, self.output_dim)
         else:
-            pre_layer.next_layer.append(self)
-            self.input_size = pre_layer.output_shape[1]
+            pre_layer.next_layer = self
+            self.input_dim = pre_layer.output_shape[1]
             self.input_shape = pre_layer.output_shape
-            self.output_shape = (self.input_shape[0], self.output_size)
-        self.__W = self.initializer([self.output_size, self.input_size])
-        self.__b = self.initializer([self.output_size])
-        self.__delta_W = np.zeros([self.output_size, self.input_size])
-        self.__delta_b = np.zeros([self.output_size])
-        self.__delta = np.zeros([self.input_size])
+            self.output_shape = (self.input_shape[0], self.output_dim)
+        self.__W = self.initializer([self.output_dim, self.input_dim])
+        self.__b = self.initializer([self.output_dim])
+        self.__delta_W = np.zeros([self.output_dim, self.input_dim])
+        self.__delta_b = np.zeros([self.output_dim])
+        self.__delta = np.zeros([self.input_dim])
 
     def forward(self, inputs, *args, **kwargs):
         """
@@ -119,9 +121,9 @@ Dense = FullyConnected
 
 
 class Softmax(Dense):
-    def __init__(self, output_size, input_size=None,
+    def __init__(self, output_dim, input_dim=None,
                     initializer=xavier_uniform_initializer):
-        super(Softmax, self).__init__(output_size=output_size, input_size=input_size,
+        super(Softmax, self).__init__(output_dim=output_dim, input_dim=input_dim,
                                       activator='softmax', initializer=initializer)
 
 
@@ -145,7 +147,7 @@ class Flatten(Layer):
         if pre_layer is None:
             raise ValueError('Flatten could not be used as the first layer')
         self.pre_layer = pre_layer
-        pre_layer.next_layer.append(self)
+        pre_layer.next_layer = self
         self.input_shape = pre_layer.output_shape
         self.output_shape = self._compute_output_shape(self.input_shape)
 
@@ -194,7 +196,7 @@ class Dropout(Layer):
             self.axis = range(len(pre_layer.output_shape))
         self.output_shape = pre_layer.output_shape
         self.pre_layer = pre_layer
-        pre_layer.next_layer.append(self)
+        pre_layer.next_layer = self
 
     def forward(self, inputs, is_train=True, *args, **kwargs):
         self.input = inputs

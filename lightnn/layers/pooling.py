@@ -22,6 +22,8 @@ class MaxPoolingLayer(Layer):
             stride = (stride, stride)
         self.stride = stride
         self.__delta = None
+        if self.input_shape is not None:
+            self.connection(None)
 
     @property
     def delta(self):
@@ -46,7 +48,7 @@ class MaxPoolingLayer(Layer):
         else:
             self.input_shape = pre_layer.output_shape
             self.pre_layer = pre_layer
-            pre_layer.next_layer.append(self)
+            pre_layer.next_layer = self
 
         output_height = (self.input_shape[1] + self.zero_padding[0] * 2
                               - self.window_shape[0]) // self.stride[0] + 1
@@ -138,6 +140,8 @@ class AvgPoolingLayer(Layer):
             stride = (stride, stride)
         self.stride = stride
         self.__delta = None
+        if self.input_shape is not None:
+            self.connection(None)
 
     @property
     def delta(self):
@@ -162,7 +166,7 @@ class AvgPoolingLayer(Layer):
         else:
             self.input_shape = pre_layer.output_shape
             self.pre_layer = pre_layer
-            pre_layer.next_layer.append(self)
+            pre_layer.next_layer = self
 
         output_height = (self.input_shape[1] + self.zero_padding[0] * 2
                               - self.window_shape[0]) // self.stride[0] + 1

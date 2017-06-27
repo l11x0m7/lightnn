@@ -112,6 +112,7 @@ class Softmax(Activator):
 
 
 # --- tanh functions ---*
+
 def tanh(z):
     z = np.asarray(z)
     return np.tanh(z)
@@ -129,6 +130,7 @@ class Tanh(Activator):
 
 
 # --- leaky relu functions ---*
+
 def leaky_relu(z, alpha=0.3):
     z = np.asarray(z)
     return np.maximum(z, 0) + np.minimum(z, 0) * alpha

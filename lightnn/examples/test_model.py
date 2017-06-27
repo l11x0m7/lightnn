@@ -5,15 +5,18 @@ from __future__ import print_function
 
 import numpy as np
 
-from lightnn.models.models import Sequential
+from lightnn.models.models import Sequential, Model
 from lightnn.layers.core import Dense, Flatten, Softmax, Input, Dropout
 from lightnn.layers.convolutional import Conv2d
 from lightnn.layers.pooling import MaxPooling, AvgPooling
-from lightnn.base.activations import Relu
+from lightnn.base.activations import Relu, Selu
 from lightnn.base.optimizers import SGD
 
 
 def mlp_random():
+    """test MLP with random data and Sequential
+
+    """
     input_size = 600
     input_dim = 20
     label_size = 10
@@ -21,6 +24,7 @@ def mlp_random():
     train_y = np.zeros((input_size, label_size))
     for _ in xrange(input_size):
         train_y[_,np.random.randint(0, label_size)] = 1
+
     model = Sequential()
     model.add(Input(input_shape=input_dim))
     model.add(Dense(100, activator='selu'))
@@ -30,6 +34,9 @@ def mlp_random():
 
 
 def mlp_mnist():
+    """test MLP with MNIST data and Sequential
+
+    """
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
     training_data = np.array([image.flatten() for image in mnist.train.images])
@@ -38,6 +45,7 @@ def mlp_mnist():
     valid_label = mnist.validation.labels
     input_dim = training_data.shape[1]
     label_size = training_label.shape[1]
+
     model = Sequential()
     model.add(Input(input_shape=(input_dim, )))
     model.add(Dense(300, activator='selu'))
@@ -48,6 +56,9 @@ def mlp_mnist():
 
 
 def cnn_random():
+    """test CNN with random data and Sequential
+
+    """
     input_size = 600
     input_dim = 28
     input_depth = 1
@@ -56,6 +67,7 @@ def cnn_random():
     train_y = np.zeros((input_size, label_size))
     for _ in xrange(input_size):
         train_y[_,np.random.randint(0, label_size)] = 1
+
     model =Sequential()
     model.add(Input(batch_input_shape=(None, 28, 28, 1)))
     model.add(Conv2d((3, 3), 1, activator='relu'))
@@ -69,6 +81,9 @@ def cnn_random():
 
 
 def cnn_mnist():
+    """test CNN with MNIST data and Sequential
+
+    """
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
     training_data = np.array([image.reshape(28, 28, 1) for image in mnist.train.images])
@@ -76,6 +91,7 @@ def cnn_mnist():
     valid_data = np.array([image.reshape(28, 28, 1) for image in mnist.validation.images])
     valid_label = mnist.validation.labels
     label_size = training_label.shape[1]
+
     model =Sequential()
     model.add(Input(batch_input_shape=(None, 28, 28, 1)))
     model.add(Conv2d((3, 3), 1, activator='selu'))
@@ -87,16 +103,46 @@ def cnn_mnist():
     model.compile('CCE', optimizer=SGD(lr=1e-2))
     model.fit(training_data, training_label, validation_data=(valid_data, valid_label), verbose=2)
 
-class Test():
-    def __init__(self):
-        pass
 
-    def __call__(self, *args, **kwargs):
-        return self.call(*args, **kwargs)
+def model_mlp_random():
+    """test MLP with random data and Model
 
-    def call(self, val, *args, **kwargs):
-        print('Call')
-        return val
+    """
+    input_size = 600
+    input_dim = 20
+    label_size = 10
+    train_X = np.random.random((input_size, input_dim))
+    train_y = np.zeros((input_size, label_size))
+    for _ in xrange(input_size):
+        train_y[_,np.random.randint(0, label_size)] = 1
+
+    input = Input(input_shape=input_dim)
+    d1 = Dense(100, activator='selu')(input)
+    s1 = Softmax(label_size)(d1)
+    model = Model(input, s1)
+    model.compile('CCE')
+    model.fit(train_X, train_y, verbose=1)
+
+
+def model_mlp_mnist():
+    """test MLP with MNIST data and Model
+
+    """
+    from tensorflow.examples.tutorials.mnist import input_data
+    mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
+    training_data = np.array([image.flatten() for image in mnist.train.images])
+    training_label = mnist.train.labels
+    valid_data = np.array([image.flatten() for image in mnist.validation.images])
+    valid_label = mnist.validation.labels
+    input_dim = training_data.shape[1]
+    label_size = training_label.shape[1]
+
+    dense_1 = Dense(300, input_dim=input_dim, activator='selu')
+    dropout_1 = Dropout(0.2)(dense_1)
+    softmax_1 = Softmax(label_size)(dropout_1)
+    model = Model(dense_1, softmax_1)
+    model.compile('CCE', optimizer=SGD())
+    model.fit(training_data, training_label, validation_data=(valid_data, valid_label))
 
 
 if __name__ == '__main__':
@@ -104,6 +150,5 @@ if __name__ == '__main__':
     # mlp_mnist()
     # cnn_random()
     # cnn_mnist()
-    t = Test()(2)
-    print(t)
-
+    # model_mlp_random()
+    model_mlp_mnist()
