@@ -75,6 +75,10 @@ lightnn
 ### optimizers
 
 * SGD
+* Momentum
+* RMSProp
+* Adam
+* Adagrad
 
 ### layers
 
