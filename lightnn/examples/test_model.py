@@ -10,7 +10,7 @@ from lightnn.layers.core import Dense, Flatten, Softmax, Input, Dropout
 from lightnn.layers.convolutional import Conv2d
 from lightnn.layers.pooling import MaxPooling, AvgPooling
 from lightnn.base.activations import Relu, Selu
-from lightnn.base.optimizers import SGD
+from lightnn.base.optimizers import SGD, Momentum, RMSProp, Adam, Adagrad
 
 
 def mlp_random():
@@ -141,7 +141,7 @@ def model_mlp_mnist():
     dropout_1 = Dropout(0.2)(dense_1)
     softmax_1 = Softmax(label_size)(dropout_1)
     model = Model(dense_1, softmax_1)
-    model.compile('CCE', optimizer=SGD())
+    model.compile('CCE', optimizer=Adagrad())
     model.fit(training_data, training_label, validation_data=(valid_data, valid_label))
 
 
