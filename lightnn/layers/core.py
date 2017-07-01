@@ -86,11 +86,11 @@ class FullyConnected(Layer):
             self.input_dim = pre_layer.output_shape[1]
             self.input_shape = pre_layer.output_shape
             self.output_shape = (self.input_shape[0], self.output_dim)
-        self.__W = self.initializer([self.output_dim, self.input_dim])
-        self.__b = self.initializer([self.output_dim])
-        self.__delta_W = np.zeros([self.output_dim, self.input_dim])
-        self.__delta_b = np.zeros([self.output_dim])
-        self.__delta = np.zeros([self.input_dim])
+        self.W = self.initializer([self.output_dim, self.input_dim])
+        self.b = self.initializer([self.output_dim])
+        self.delta_W = np.zeros([self.output_dim, self.input_dim])
+        self.delta_b = np.zeros([self.output_dim])
+        self.delta = np.zeros([self.input_dim])
 
     def forward(self, inputs, *args, **kwargs):
         """

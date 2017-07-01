@@ -102,11 +102,12 @@ bce = BCE = binary_crossentropy = BinaryCategoryLoss
 
 def get(loss):
     if isinstance(loss, str):
-        if loss in ('mse', 'MSE', 'MeanSquareLoss'):
+        loss = loss.lower()
+        if loss in ('mse', 'meansquareloss'):
             return MSE()
-        elif loss in ('categorical_crossentropy', 'cce', 'CCE', 'LogLikelihoodLoss'):
+        elif loss in ('categorical_crossentropy', 'cce', 'loglikelihoodloss'):
             return CCE()
-        elif loss in ('binary_crossentropy', 'bce', 'BCE', 'BinaryCategoryLoss'):
+        elif loss in ('binary_crossentropy', 'bce', 'binarycategoryloss'):
             return BCE()
         else:
             raise ValueError('Unknown loss name `{}`'.format(loss))

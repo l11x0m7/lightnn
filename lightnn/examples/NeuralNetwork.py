@@ -6,13 +6,13 @@ from __future__ import print_function
 import numpy as np
 
 from ..base.activations import Sigmoid, Softmax
-from ..base.losses import LogLikelihoodLoss
 from ..base.initializers import xavier_uniform_initializer
 from ..layers.core import FullyConnected
 
 
+### !!!!!!!!!!!!! Deprecated file !!!!!!!!!!!!! ###
 class NetWork(object):
-    def __init__(self, sizes, cost=LogLikelihoodLoss, activator=Sigmoid, initializer=xavier_uniform_initializer, lr=1e-1, lmbda=None):
+    def __init__(self, sizes, cost='bce', activator='sigmoid', initializer=xavier_uniform_initializer, lr=1e-1, lmbda=None):
         self.sizes = sizes
         self.layer_num = len(sizes)
         self.cost = cost
@@ -21,7 +21,7 @@ class NetWork(object):
         self.layers = [FullyConnected(i_size, o_size,
                             activator, initializer) for i_size, o_size
                                 in zip(sizes[:-1], sizes[1:])]
-        if self.layers[-1].output_size > 2:
+        if self.layers[-1].output_dim > 2:
             self.layers[-1].activator = Softmax
 
     def train(self, input_data, input_label, epoch, batch_size, verbose=True):

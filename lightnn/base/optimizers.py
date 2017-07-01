@@ -168,15 +168,16 @@ def _grad_clip(grad, clip):
 
 def get(optimizer):
     if isinstance(optimizer, str):
-        if optimizer in ('SGD', 'sgd'):
+        optimizer = optimizer.lower()
+        if optimizer in ('sgd', ):
             return SGD()
-        elif optimizer in ('momentum', 'Momentum', 'MOMENTUM'):
+        elif optimizer in ('momentum', ):
             return Momentum()
-        elif optimizer in ('RMSProp', 'rmsprop', 'rms', 'RMS'):
+        elif optimizer in ('rmsprop', 'rms'):
             return RMSProp()
-        elif optimizer in ('Adam', 'adam', 'ADAM'):
+        elif optimizer in ('adam'):
             return Adam()
-        elif optimizer in ('Adagrad', 'adagrad'):
+        elif optimizer in ('adagrad', ):
             return Adagrad()
         else:
             raise ValueError('Unknown optimizer name `{}`'.format(optimizer))

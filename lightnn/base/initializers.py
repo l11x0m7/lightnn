@@ -38,7 +38,40 @@ def default_weight_initializer(shape):
 def large_weight_initializer(shape):
     """Initialize weights with large scale random distribution
     Not quite recommended to use.
-    :param shape: Tuple or 1-d array that species dimensions of requested tensor.
-    :return: specified shape sampled from large scale random distribution.
+
+    # Arguments
+
+    shape: Tuple or 1-d array that species dimensions of requested tensor.
+
+    # Return
+
+    specified shape sampled from large scale random distribution.
     """
     return np.random.randn(shape)
+
+
+def orthogonal_initializer(shape, gain=1., seed=None):
+    """Initializer that generates a random orthogonal matrix.
+
+    # Arguments
+
+        gain: Multiplicative factor to apply to the orthogonal matrix.
+        seed: A Python integer. Used to seed the random generator.
+
+    # References
+
+        Saxe et al., http://arxiv.org/abs/1312.6120
+    """
+    num_rows = 1
+    for dim in shape[:-1]:
+        num_rows *= dim
+    num_cols = shape[-1]
+    flat_shape = (num_rows, num_cols)
+    if seed is not None:
+        np.random.seed(seed)
+    a = np.random.normal(0.0, 1.0, flat_shape)
+    u, _, v = np.linalg.svd(a, full_matrices=False)
+    # Pick the one with the correct shape.
+    q = u if u.shape == flat_shape else v
+    q = q.reshape(shape)
+    return gain * q[:shape[0], :shape[1]]

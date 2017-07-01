@@ -4,10 +4,9 @@ sys.path.append('../../')
 
 import numpy as np
 
-from lightnn.layers.convolutional import Conv
+from lightnn.layers.convolutional import Conv2d
 from lightnn.layers.pooling import MaxPoolingLayer, AvgPoolingLayer
 from lightnn.base.activations import Sigmoid, Relu, Identity
-from lightnn.base.losses import LogLikelihoodLoss, MeanSquareLoss
 from lightnn.base.initializers import xavier_uniform_initializer
 
 
@@ -15,7 +14,7 @@ def conv_gradient_check():
     """
     gradient check for convolution layer
     """
-    activator = Relu
+    activator = Relu()
     def init_test():
         a = np.array(
             [[[0,1,1,0,2],
@@ -33,17 +32,11 @@ def conv_gradient_check():
               [0,2,1,0,1],
               [0,1,2,2,2],
               [2,1,0,0,1]]])
-        b = np.array(
-            [[[0,1,1],
-            [2,2,2],
-            [1,0,0]],
-            [[1,0,2],
-            [0,0,0],
-            [1,2,1]]])
         a = a.transpose([1,2,0])
-        b = b.transpose([1,2,0])
+        a = np.expand_dims(a, 0)
         # debug point : when `stride` is `[1, 1]`, the function runs in error states
-        cl = Conv(5,5,3,3,3,2,1,[1, 1],activator=activator,initializer=xavier_uniform_initializer,lr=0.001)
+        cl = Conv2d((3,3), 2, (1,5,5,3), 1, [1, 1], activator=activator,
+                    initializer=xavier_uniform_initializer)
         cl.filters[0].weights = np.array(
             [[[-1,1,0],
               [0,1,0],
@@ -65,7 +58,7 @@ def conv_gradient_check():
              [[-1,0,0],
               [-1,0,1],
               [-1,0,0]]], dtype=np.float64).transpose([1,2,0])
-        return a, b, cl
+        return a, cl
 
     """
         gradient check
@@ -74,9 +67,9 @@ def conv_gradient_check():
     # 设计一个误差函数，取所有节点输出项之和
     error_function = lambda o : np.sum(o) / 2
     # 计算forward值
-    a, b, cl = init_test()
+    a, cl = init_test()
     output = cl.forward(a)
-    print np.transpose(output, [2, 0, 1])
+    print np.transpose(output, [0, 3, 1, 2])
     # 求取sensitivity map，是一个全1数组
     sensitivity_array =  np.ones(cl.output.shape,
                                 dtype=np.float64) / 2
@@ -131,13 +124,14 @@ def max_pool_gradient_check():
         [0,2,1,0,1],
         [0,1,2,2,2],
         [2,1,0,0,1]]]).transpose([1,2,0])
-    mp = MaxPoolingLayer(5,5,3,2,2,[2,3],1)
+    a = np.expand_dims(a, 0)
+    mp = MaxPoolingLayer((2,2), (1,5,5,3), [1,1], 0)
     output = mp.forward(a)
-    print output.transpose([1,2,0])
+    print output.transpose((0,3,1,2))
     sensitivity_array = np.ones(mp.output.shape,
                             dtype=np.float64)
     delta = mp.backward(sensitivity_array)
-    print delta.transpose([1,2,0])
+    print delta.transpose([0,3,1,2])
 
 
 def avg_pool_gradient_check():
@@ -160,13 +154,14 @@ def avg_pool_gradient_check():
         [0,2,1,0,1],
         [0,1,2,2,2],
         [2,1,0,0,1]]]).transpose([1,2,0])
-    mp = AvgPoolingLayer(5,5,3,2,2,[2,2],1)
+    a = np.expand_dims(a, 0)
+    mp = AvgPoolingLayer((2,2), (1,5,5,3), [1,1], 0)
     output = mp.forward(a)
-    print output.transpose([1,2,0])
+    print output.transpose([0,3,1,2])
     sensitivity_array = np.ones(mp.output.shape,
                             dtype=np.float64)
     delta = mp.backward(sensitivity_array)
-    print delta.transpose([1,2,0])
+    print delta.transpose([0,3,1,2])
 
 
 if __name__ == '__main__':

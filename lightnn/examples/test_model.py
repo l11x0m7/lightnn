@@ -141,7 +141,7 @@ def model_mlp_mnist():
     dropout_1 = Dropout(0.2)(dense_1)
     softmax_1 = Softmax(label_size)(dropout_1)
     model = Model(dense_1, softmax_1)
-    model.compile('CCE', optimizer=Adagrad())
+    model.compile('CCE', optimizer=Adagrad(lr=1e-2))
     model.fit(training_data, training_label, validation_data=(valid_data, valid_label))
 
 

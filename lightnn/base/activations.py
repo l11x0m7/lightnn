@@ -77,7 +77,6 @@ class Identity(Activator):
     def forward(self, z, *args, **kwargs):
         return identity(z)
 
-    @staticmethod
     def backward(self, z, *args, **kwargs):
         return delta_identity(z)
 
@@ -162,7 +161,7 @@ def delta_elu(z, alpha=1.0):
                 alpha * np.exp(np.minimum(z, 0)) * np.less(z, 0).astype(int)
 
 class Elu(Activator):
-    def __init__(self, alpha):
+    def __init__(self, alpha=1.0):
         self.alpha = alpha
 
     def forward(self, z, *args, **kwargs):
@@ -314,29 +313,30 @@ def get(activator):
     if activator is None:
         return Identity()
     if isinstance(activator, str):
-        if activator in ['linear', 'Linear', 'identity', 'Identity']:
+        activator = activator.lower()
+        if activator in ('linear', 'identity'):
             return Identity()
-        elif activator in ['sigmoid', 'Sigmoid']:
+        elif activator in ('sigmoid', ):
             return Sigmoid()
-        elif activator in ['relu', 'Relu']:
+        elif activator in ('relu', ):
             return Relu()
-        elif activator in ['softmax', 'Softmax']:
+        elif activator in ('softmax', ):
             return Softmax()
-        elif activator in ['tanh', 'Tanh']:
+        elif activator in ('tanh', ):
             return Tanh()
-        elif activator in ['leaky_relu', 'LeakyRelu']:
+        elif activator in ('leaky_relu', 'leakyrelu'):
             return LeakyRelu()
-        elif activator in ['elu', 'Elu']:
+        elif activator in ('elu', ):
             return Elu()
-        elif activator in ['selu', 'Selu']:
+        elif activator in ('selu', ):
             return Selu()
-        elif activator in ['thresholded_relu', 'ThresholdedReLU']:
+        elif activator in ('thresholded_relu', 'thresholdedrelu'):
             return ThresholdedReLU()
-        elif activator in ['softplus', 'Softplus']:
+        elif activator in ('softplus', ):
             return Softplus()
-        elif activator in ['softsign', 'Softsign']:
+        elif activator in ('softsign', ):
             return Softsign()
-        elif activator in ['hard_sigmoid', 'HardSigmoid']:
+        elif activator in ('hard_sigmoid', 'hardsigmoid'):
             return HardSigmoid()
         else:
             raise ValueError('Unknown activator name `{}`'.format(activator))
