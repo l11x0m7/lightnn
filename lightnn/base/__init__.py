@@ -8,5 +8,6 @@ from __future__ import print_function
 from .activations import *
 from .losses import *
 from .initializers import *
+from .optimizers import *
 
 

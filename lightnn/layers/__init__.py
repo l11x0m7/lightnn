@@ -4,3 +4,4 @@
 from .convolutional import *
 from .core import *
 from .pooling import *
+from .recurrent import *

@@ -80,12 +80,12 @@ class FullyConnected(Layer):
         if pre_layer is None:
             if self.input_dim is None:
                 raise ValueError('input_size must not be `None` as the first layer.')
-            self.output_shape = (None, self.output_dim)
+            self.output_shape = [None, self.output_dim]
         else:
             pre_layer.next_layer = self
             self.input_dim = pre_layer.output_shape[1]
             self.input_shape = pre_layer.output_shape
-            self.output_shape = (self.input_shape[0], self.output_dim)
+            self.output_shape = [self.input_shape[0], self.output_dim]
         self.W = self.initializer([self.output_dim, self.input_dim])
         self.b = self.initializer([self.output_dim])
         self.delta_W = np.zeros([self.output_dim, self.input_dim])
@@ -100,18 +100,21 @@ class FullyConnected(Layer):
         inputs = np.asarray(inputs)
         if len(inputs.shape) == 1:
             inputs = inputs[None,:]
-        self.input = inputs
-        self.logit = np.dot(inputs, self.W.T) + self.b
+        assert list(self.input_shape[1:]) == list(inputs.shape[1:])
+        self.input_shape = inputs.shape
+        self.output_shape[0] = self.input_shape[0]
+        self.inputs = inputs
+        self.logit = np.dot(self.inputs, self.W.T) + self.b
         self.output = self.activator.forward(self.logit)
         return self.output
 
     def backward(self, pre_delta, *args, **kwargs):
         if len(pre_delta.shape) == 1:
             pre_delta = pre_delta[None,:]
-        batch_size, _ = self.input.shape
+        batch_size, _ = self.inputs.shape
         act_delta = pre_delta * self.activator.backward(self.logit)
         # here should calulate the average value of batch
-        self.delta_W = np.dot(act_delta.T, self.input)
+        self.delta_W = np.dot(act_delta.T, self.inputs)
         self.delta_b = np.mean(act_delta, axis=0)
         self.delta = np.dot(act_delta, self.W)
         return self.delta

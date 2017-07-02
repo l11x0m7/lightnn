@@ -33,10 +33,10 @@ class Recurrent(Layer):
         self.kernel_initializer = kernel_initializer
         self.recurrent_initializer = recurrent_initializer
         self.return_sequences = return_sequences
-        self.input_dim = input_shape[-1]
         self.input_shape = input_shape
         self.output_shape = None
-        self.connection(None)
+        if input_shape is not None:
+            self.input_dim = input_shape[-1]
 
     def connection(self, pre_layer):
         if pre_layer is None:
@@ -46,6 +46,8 @@ class Recurrent(Layer):
             self.input_shape = pre_layer.output_shape
             self.pre_layer = pre_layer
             pre_layer.next_layer = self
+
+        self.input_dim = self.input_shape[-1]
 
         if self.return_sequences:
             self.output_shape = [self.input_shape[0], self.input_shape[1], self.output_dim]
@@ -64,7 +66,8 @@ class SimpleRNN(Recurrent):
         self.delta_U = None
         self.delta_b = None
         self.states = list()
-        self.connection(None)
+        if input_shape is not None:
+            self.connection(None)
 
     @property
     def W(self):
@@ -114,8 +117,24 @@ class SimpleRNN(Recurrent):
     def delta_b(self, delta_b):
         self.__delta_b = delta_b
 
+    @property
+    def params(self):
+        if self.use_bias:
+            return [self.W, self.U, self.b]
+        return [self.W, self.U]
+
+    @property
+    def grads(self):
+        if self.use_bias:
+            return [self.delta_W, self.delta_U, self.delta_b]
+        return [self.delta_W, self.delta_U]
+
     def reset(self):
         self.states = list()
+
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
 
     def connection(self, pre_layer):
         super(SimpleRNN, self).connection(pre_layer)
@@ -127,7 +146,7 @@ class SimpleRNN(Recurrent):
         # inputs: batch_size, time_step, out_dim
         inputs = np.asarray(inputs)
         self.input = inputs
-        assert inputs.shape[1:] == self.input_shape[1:]
+        assert list(inputs.shape[1:]) == list(self.input_shape[1:])
         self.input_shape = inputs.shape
         self.output_shape[0] = self.input_shape[0]
         nb_batch, nb_seq, nb_input_dim = self.input_shape
@@ -155,25 +174,67 @@ class SimpleRNN(Recurrent):
         nb_batch, nb_seq, nb_input_dim = self.input_shape
         self.delta = np.zeros(self.input_shape)
         if self.return_sequences:
-            # TODO
-            pass
+            assert len(pre_delta.shape) == 3
+            for t_seq in xrange(nb_seq):
+                t_pre_delta = pre_delta[:,t_seq,:]
+                time_delta = t_pre_delta * self.activator.backward(self.logits[:,t_seq,:])
+                for t in xrange(t_seq, -1, -1):
+                    # 求U的梯度
+                    self.delta_U += np.dot(self.states[t].T, time_delta) / nb_batch
+                    # 求W的梯度
+                    self.delta_W += np.dot(self.input[:,t,:].T, time_delta) / nb_batch
+                    # 求b的梯度
+                    if self.use_bias:
+                        self.delta_b += np.mean(time_delta, axis=0) / nb_batch
+                    # 求传到上一层的误差,layerwise
+                    self.delta[:,t,:] += np.dot(time_delta, self.W.T)
+                    # 求同一层的时间误差,timewise
+                    if t > 0:
+                        # 下面两种计算同层不同时间误差的方法等效
+                        # 方法1
+                        time_delta = np.asarray(
+                            map(
+                            np.dot, *(time_delta, np.asarray(map(
+                            lambda logit:(self.activator.backward(logit) * self.U.T)
+                            , self.logits[:,t-1,:])))
+                            )
+                        )
+                        # 方法2
+                        #
+                        # for bn in xrange(nb_batch):
+                        #     time_delta[bn,:] = np.dot(
+                        #     time_delta[bn,:], np.dot(
+                        #     np.diag(self.activator.backward(self.logits[bn,t-1,:])),
+                        #     self.U).T)
         else:
+            assert len(pre_delta.shape) == 2
             # 同一层的误差传递（从T到1）
             time_delta = pre_delta * self.activator.backward(self.logits[:,-1,:])
             for t in xrange(nb_seq - 1, -1, -1):
                 # 求U的梯度
-                self.delta_U += np.dot(self.states[t].T, time_delta)
+                self.delta_U += np.dot(self.states[t].T, time_delta) / nb_batch
                 # 求W的梯度
-                self.delta_W += np.dot(self.input[:,t,:].T, time_delta)
+                self.delta_W += np.dot(self.input[:,t,:].T, time_delta) / nb_batch
                 # 求b的梯度
                 if self.use_bias:
-                    self.delta_b += np.mean(time_delta, axis=0)
-                # 求传到上一层的误差,timewise
+                    self.delta_b += np.mean(time_delta, axis=0) / nb_batch
+                # 求传到上一层的误差,layerwise
                 self.delta[:,t,:] = np.dot(time_delta, self.W.T)
-                # 求同一层的误差,layerwise
+                # 求同一层不同时间的误差,timewise
                 if t > 0:
-                    for bn in xrange(nb_batch):
-                        time_delta[bn,:] = np.dot(
-                                time_delta[bn,:], np.dot(
-                                np.diag(self.activator.backward(self.logits[bn,t-1,:])), self.U).T)
+                    # 下面两种计算同层不同时间误差的方法等效
+                        # 方法1
+                    time_delta = np.asarray(
+                        map(
+                        np.dot, *(time_delta, np.asarray(map(
+                        lambda logit:(self.activator.backward(logit) * self.U.T)
+                        , self.logits[:,t-1,:])))
+                        )
+                    )
+                    # 方法2
+                    # for bn in xrange(nb_batch):
+                    #     time_delta[bn,:] = np.dot(
+                    #     time_delta[bn,:], np.dot(
+                    #     np.diag(self.activator.backward(self.logits[bn,t-1,:])),
+                    #             self.U).T)
         return self.delta
