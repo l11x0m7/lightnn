@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/Version-0.0.3-blue.svg) ![Version](https://img.shields.io/badge/Python-2.7-green.svg) ![Version](https://img.shields.io/badge/Numpy-green.svg)
+![Version](https://img.shields.io/badge/Version-0.0.3-blue.svg) ![Version](https://img.shields.io/badge/Python-2.7-green.svg) ![Version](https://img.shields.io/badge/Numpy-1.13.0-green.svg)
 
 # lightnn
 The light(\`light\` means not many codes here) deep learning framework for study and for fun. Join us!
@@ -93,6 +93,11 @@ lightnn
 * Flatten
 * RNN
 
+### examples
+
+* MLP MNIST
+* CNN MNIST
+* RNN LM
 
 
 For details, please visit [skyhigh233](http://skyhigh233.com).
