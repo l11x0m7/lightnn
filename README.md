@@ -92,6 +92,7 @@ lightnn
 * Dropout
 * Flatten
 * RNN
+* LSTM
 
 ### examples
 

@@ -18,9 +18,9 @@ def get_data():
     print("data has %s charactres, %s unique." % (data_size, vocab_size))
     char_to_index = {ch: i for i, ch in enumerate(chars)}
 
-    time_steps, batch_size = 30, 40
+    time_steps, batch_size = 20, 50
 
-    length = batch_size * 200
+    length = batch_size * 20
     text_pointers = np.random.randint(data_size - time_steps - 1, size=length)
     batch_in = np.zeros([length, time_steps, vocab_size])
     batch_out = np.zeros([length, vocab_size], dtype=np.uint8)
@@ -60,7 +60,7 @@ def main2(max_iter):
     net.add(SimpleRNN(hidden_size=100))
     net.add(Softmax(output_dim=vocab_size))
 
-    net.compile(loss='CCE', optimizer=Adam(lr=0.01, grad_clip=5.))
+    net.compile(loss='CCE', optimizer=Adam(lr=0.001, grad_clip=5.))
 
     print("Train model ...")
     net.fit(batch_in, batch_out, max_iter=max_iter, batch_size=batch_size, verbose=2)

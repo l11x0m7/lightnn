@@ -75,3 +75,23 @@ def orthogonal_initializer(shape, gain=1., seed=None):
     q = u if u.shape == flat_shape else v
     q = q.reshape(shape)
     return gain * q[:shape[0], :shape[1]]
+
+
+def get(initializer):
+    if isinstance(initializer, str):
+        initializer = initializer.lower()
+        if initializer in ('glorot_uniform_initializer', 'glorot uniform initializer',
+                           'xavier_uniform_initializer', 'xavier uniform initializer'):
+            return xavier_uniform_initializer
+        elif initializer in ('default_weight_initializer', 'default weight initializer'):
+            return default_weight_initializer
+        elif initializer in ('large_weight_initializer', 'large weight initializer'):
+            return large_weight_initializer
+        elif initializer in ('orthogonal_initializer', 'orthogonal initializer'):
+            return orthogonal_initializer
+        else:
+            raise ValueError('Unknown initializer name `{}`'.format(initializer))
+    elif isinstance(initializer, type(lambda k:k)):
+        return initializer
+    else:
+        raise ValueError('Unknown initializer type `{}`'.format(initializer.__name__))
