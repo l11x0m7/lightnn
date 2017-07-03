@@ -71,7 +71,7 @@ def vector_rnn_gradient_check():
 
 
 def sequence_rnn_gradient_check():
-    batch_size = 200
+    batch_size = 10
     time_step = 10
     out_dim = 15
     out_dim2 = 5
@@ -341,7 +341,7 @@ def sequence_lstm_gradient_check():
 
 
 if __name__ == '__main__':
-    # vector_rnn_gradient_check()
+    vector_rnn_gradient_check()
     # sequence_rnn_gradient_check()
     # vector_lstm_gradient_check()
-    sequence_lstm_gradient_check()
+    # sequence_lstm_gradient_check()

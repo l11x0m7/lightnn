@@ -189,69 +189,42 @@ class SimpleRNN(Recurrent):
         self.delta = np.zeros(self.input_shape)
         if self.return_sequences:
             assert len(pre_delta.shape) == 3
-            for t_seq in xrange(nb_seq):
-                t_pre_delta = pre_delta[:,t_seq,:]
-                # 同一层的误差传递（从T到1）,此处的time_delta为delta_E/delta_z
-                time_delta = t_pre_delta * self.activator.backward(self.logits[:,t_seq,:])
-                for t in xrange(t_seq, -1, -1):
-                    # 求U的梯度
-                    self.delta_U += np.dot(self.states[t].T, time_delta) / nb_batch
-                    # 求W的梯度
-                    self.delta_W += np.dot(self.inputs[:,t,:].T, time_delta) / nb_batch
-                    # 求b的梯度
-                    if self.use_bias:
-                        self.delta_b += np.mean(time_delta, axis=0)
-                    # 求传到上一层的误差,layerwise
-                    self.delta[:,t,:] += np.dot(time_delta, self.W.T)
-                    # 求同一层的时间误差,timewise
-                    if t > 0:
-                        # 下面两种计算同层不同时间误差的方法等效
-                        # 方法1
-                        time_delta = np.asarray(
-                            map(
-                            np.dot, *(time_delta, np.asarray(map(
-                            lambda logit:(self.activator.backward(logit) * self.U.T)
-                            , self.logits[:,t-1,:])))
-                            )
-                        )
-                        # 方法2
-                        #
-                        # for bn in xrange(nb_batch):
-                        #     time_delta[bn,:] = np.dot(
-                        #     time_delta[bn,:], np.dot(
-                        #     np.diag(self.activator.backward(self.logits[bn,t-1,:])),
-                        #     self.U).T)
+            # 同一层的误差传递（从T到1）,此处的time_delta为delta_E/delta_z
+            time_delta = pre_delta[:,nb_seq-1,:] * self.activator.backward(self.logits[:,nb_seq-1,:])
         else:
             assert len(pre_delta.shape) == 2
             # 同一层的误差传递（从T到1）,此处的time_delta为delta_E/delta_z
             time_delta = pre_delta * self.activator.backward(self.logits[:,-1,:])
-            for t in xrange(nb_seq - 1, -1, -1):
-                # 求U的梯度
-                self.delta_U += np.dot(self.states[t].T, time_delta) / nb_batch
-                # 求W的梯度
-                self.delta_W += np.dot(self.inputs[:,t,:].T, time_delta) / nb_batch
-                # 求b的梯度
-                if self.use_bias:
-                    self.delta_b += np.mean(time_delta, axis=0)
-                # 求传到上一层的误差,layerwise
-                self.delta[:,t,:] = np.dot(time_delta, self.W.T)
-                # 求同一层不同时间的误差,timewise
-                if t > 0:
-                    # 下面两种计算同层不同时间误差的方法等效
-                        # 方法1
-                    time_delta = np.asarray(
-                        map(
-                        np.dot, *(time_delta, np.asarray(map(
-                        lambda logit:(self.activator.backward(logit) * self.U.T)
-                        , self.logits[:,t-1,:])))
-                        )
+        for t in xrange(nb_seq - 1, -1, -1):
+            # 求U的梯度
+            self.delta_U += np.dot(self.states[t].T, time_delta) / nb_batch
+            # 求W的梯度
+            self.delta_W += np.dot(self.inputs[:,t,:].T, time_delta) / nb_batch
+            # 求b的梯度
+            if self.use_bias:
+                self.delta_b += np.mean(time_delta, axis=0)
+            # 求传到上一层的误差,layerwise
+            self.delta[:,t,:] = np.dot(time_delta, self.W.T)
+            # 求同一层不同时间的误差,timewise
+            if t > 0:
+                # 下面两种计算同层不同时间误差的方法等效
+                # 方法1
+                time_delta = np.asarray(
+                    map(
+                    np.dot, *(time_delta, np.asarray(map(
+                    lambda logit:(self.activator.backward(logit) * self.U.T)
+                    , self.logits[:,t-1,:])))
                     )
-                    # 方法2
-                    # for bn in xrange(nb_batch):
-                    #     time_delta[bn,:] = np.dot(
-                    #     time_delta[bn,:], np.dot(
-                    #     np.diag(self.activator.backward(self.logits[bn,t-1,:])),
-                    #             self.U).T)
+                )
+                # 方法2
+                # for bn in xrange(nb_batch):
+                #     time_delta[bn,:] = np.dot(
+                #     time_delta[bn,:], np.dot(
+                #     np.diag(self.activator.backward(self.logits[bn,t-1,:])),
+                #             self.U).T)
+                if self.return_sequences:
+                    time_delta += pre_delta[:,t - 1,:] * \
+                             self.activator.backward(self.logits[:,t - 1,:])
         self.reset()
         return self.delta
 
@@ -703,3 +676,7 @@ class LSTM(Recurrent):
                 if self.return_sequences:
                     time_delta += pre_delta[:,t - 1,:]
         return self.delta
+
+
+class GRU(Recurrent):
+    pass
