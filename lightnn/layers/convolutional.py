@@ -15,6 +15,12 @@ from ..ops import _check_convolution_layer
 
 class Filter(object):
     def __init__(self, filter_shape, initializer):
+        """Filter unit.
+
+        # Params
+        filter_shape: (filter_height, filter_width, input_depth).
+        initializer: initializer for filters.
+        """
         assert len(filter_shape) == 3
         self.filter_shape = filter_shape
         self.__W = initializer(filter_shape)
@@ -60,16 +66,23 @@ class Filter(object):
 
 
 class Conv2d(Layer):
+    """Convolutional Layer.
+        For 2d inputs(except depth dimension and batch dimension).
+    """
     def __init__(self, filter_size, filter_num, input_shape=None,
                  zero_padding=0, stride=1, activator=Relu, initializer=xavier_uniform_initializer):
         """
-        Convolution Layer
-        :param filter_shape: (height, width, depth)
-        :param input_shape: (batch, height, width, depth)
-        :param zero_padding: zero padding number, int or tuple
-        :param stride: int or tuple, given (stride_height, stride_width) or stride
-                        to control the size of output picture
-        :param activator: activator like tanh or sigmoid or relu
+        Convolution Layer.
+
+        # Params
+        filter_size: (height, width).
+        filter_num: the number of filters.
+        input_shape: (batch, height, width, depth).
+        zero_padding: zero padding number, int or tuple.
+        stride: int or tuple, given (stride_height, stride_width) or stride
+                        to control the size of output picture.
+        activator: activator like tanh or sigmoid or relu.
+        initializer: initializer for weights and biases.
         """
 
         # expand zero padding

@@ -93,12 +93,15 @@ lightnn
 * Flatten
 * RNN
 * LSTM
+* GRU
 
 ### examples
 
-* MLP MNIST
-* CNN MNIST
-* RNN LM
+* MLP MNIST Classification
+* CNN MNIST Classification
+* RNN Language Model
+* LSTM Language Model
+* GRU Language Model
 
 
 For details, please visit [skyhigh233](http://skyhigh233.com).

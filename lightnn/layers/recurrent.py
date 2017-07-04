@@ -77,7 +77,6 @@ class SimpleRNN(Recurrent):
         self.delta_W = None
         self.delta_U = None
         self.delta_b = None
-        self.states = list()
         if input_shape is not None:
             self.connection(None)
 
@@ -141,9 +140,6 @@ class SimpleRNN(Recurrent):
             return [self.delta_W, self.delta_U, self.delta_b]
         return [self.delta_W, self.delta_U]
 
-    def reset(self):
-        self.states = list()
-
     def call(self, pre_layer=None, *args, **kwargs):
         self.connection(pre_layer)
         return self
@@ -156,7 +152,6 @@ class SimpleRNN(Recurrent):
 
     def forward(self, inputs, *args, **kwargs):
         # clear states
-        self.reset()
         # inputs: batch_size, time_step, out_dim
         inputs = np.asarray(inputs)
         self.inputs = inputs
@@ -166,14 +161,14 @@ class SimpleRNN(Recurrent):
         nb_batch, nb_seq, nb_input_dim = self.input_shape
         self.outputs = np.zeros((nb_batch, nb_seq, self.output_dim))
         self.logits = np.zeros((nb_batch, nb_seq, self.output_dim))
-        self.states.append(np.zeros((nb_batch, self.output_dim)))
+        pre_state = np.zeros((nb_batch, self.output_dim))
         for t in xrange(nb_seq):
-            self.outputs[:,t,:] = self.inputs[:,t,:].dot(self.W) + self.states[-1].dot(self.U)
+            self.outputs[:,t,:] = self.inputs[:,t,:].dot(self.W) + pre_state.dot(self.U)
             if self.use_bias:
                 self.outputs[:,t,:] += self.b
             self.logits[:,t,:] = self.outputs[:,t,:]
             self.outputs[:,t,:] = self.activator.forward(self.outputs[:,t,:])
-            self.states.append(self.outputs[:,t,:])
+            pre_state = self.outputs[:,t,:]
 
         if self.return_sequences:
             return self.outputs
@@ -186,6 +181,7 @@ class SimpleRNN(Recurrent):
         if self.use_bias:
             self.delta_b = np.zeros(self.b.shape)
         nb_batch, nb_seq, nb_input_dim = self.input_shape
+        nb_output_dim = self.output_dim
         self.delta = np.zeros(self.input_shape)
         if self.return_sequences:
             assert len(pre_delta.shape) == 3
@@ -196,10 +192,13 @@ class SimpleRNN(Recurrent):
             # 同一层的误差传递（从T到1）,此处的time_delta为delta_E/delta_z
             time_delta = pre_delta * self.activator.backward(self.logits[:,-1,:])
         for t in xrange(nb_seq - 1, -1, -1):
+            pre_logit = np.zeros((nb_batch, nb_output_dim)) if t == 0 else self.logits[:,t - 1,:]
+            cur_input = self.inputs[:,t,:]
+            pre_state = np.zeros((nb_batch, nb_output_dim)) if t == 0 else self.outputs[:,t - 1,:]
             # 求U的梯度
-            self.delta_U += np.dot(self.states[t].T, time_delta) / nb_batch
+            self.delta_U += np.dot(pre_state.T, time_delta) / nb_batch
             # 求W的梯度
-            self.delta_W += np.dot(self.inputs[:,t,:].T, time_delta) / nb_batch
+            self.delta_W += np.dot(cur_input.T, time_delta) / nb_batch
             # 求b的梯度
             if self.use_bias:
                 self.delta_b += np.mean(time_delta, axis=0)
@@ -209,23 +208,25 @@ class SimpleRNN(Recurrent):
             if t > 0:
                 # 下面两种计算同层不同时间误差的方法等效
                 # 方法1
-                time_delta = np.asarray(
-                    map(
-                    np.dot, *(time_delta, np.asarray(map(
-                    lambda logit:(self.activator.backward(logit) * self.U.T)
-                    , self.logits[:,t-1,:])))
-                    )
-                )
+                # time_delta = np.asarray(
+                #     map(
+                #     np.dot, *(time_delta, np.asarray(map(
+                #     lambda logit:(self.activator.backward(logit) * self.U.T)
+                #     , pre_logit)))
+                #     )
+                # )
                 # 方法2
                 # for bn in xrange(nb_batch):
                 #     time_delta[bn,:] = np.dot(
                 #     time_delta[bn,:], np.dot(
-                #     np.diag(self.activator.backward(self.logits[bn,t-1,:])),
+                #     np.diag(self.activator.backward(pre_logit[bn])),
                 #             self.U).T)
+                # 方法3,效率相对比较高
+                time_delta = np.sum(time_delta[:,None,:].transpose((0,2,1)) * \
+                                (self.activator.backward(pre_logit)[:,None,:] * self.U.T), axis=1)
                 if self.return_sequences:
                     time_delta += pre_delta[:,t - 1,:] * \
-                             self.activator.backward(self.logits[:,t - 1,:])
-        self.reset()
+                             self.activator.backward(pre_logit)
         return self.delta
 
 
@@ -593,6 +594,18 @@ class LSTM(Recurrent):
             return self.outputs[:,-1,:]
 
     def backward(self, pre_delta, *args, **kwargs):
+        """BPTT.
+
+        思路步骤:
+        1. 求出loss关于h_{t-1},i_t,o_t,f_t和c_tilde_t的logit（激活函数里面的线性和）的偏导
+        2. 所有其余的偏导（W,U,b,以及往前一个timestep和往前一层传的偏导）都可以由上面的几个偏导表示
+
+        # Params
+        pre_delta: gradients from the next layer.
+
+        # Return
+        gradients to the previous layer.
+        """
         self.delta_W_i = np.zeros(self.W_i.shape)
         self.delta_W_o = np.zeros(self.W_o.shape)
         self.delta_W_f = np.zeros(self.W_f.shape)
@@ -679,4 +692,370 @@ class LSTM(Recurrent):
 
 
 class GRU(Recurrent):
-    pass
+    """
+    Gated Recurrent Unit.
+
+       A variant of LSTM(simplified version)
+
+       References:
+       1. LSTM: A Search Space Odyssey
+          (https://arxiv.org/pdf/1503.04069.pdf)
+    """
+
+    def __init__(self, output_dim,
+                 input_shape=None,
+                 activator='tanh',
+                 recurrent_activator='sigmoid',
+                 kernel_initializer='glorot_uniform_initializer',
+                 recurrent_initializer='orthogonal_initializer',
+                 use_bias=True,
+                 return_sequences=False,
+                 **kwargs):
+        super(GRU, self).__init__(output_dim, input_shape, return_sequences, **kwargs)
+        self.use_bias = use_bias
+        self.activator = activations.get(activator)
+        self.recurrent_activator = activations.get(recurrent_activator)
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.recurrent_initializer = initializers.get(recurrent_initializer)
+
+        # reset gate
+        self.__W_r = None
+        self.__U_r = None
+        self.__b_r = None
+        self.__delta_W_r = None
+        self.__delta_U_r = None
+        self.__delta_b_r = None
+
+        # update gate
+        self.__W_z = None
+        self.__U_f = None
+        self.__b_f = None
+        self.__delta_W_f = None
+        self.__delta_U_f = None
+        self.__delta_b_f = None
+
+        # hidden state
+        self.__W_h = None
+        self.__U_h = None
+        self.__b_h = None
+        self.__delta_W_h = None
+        self.__delta_U_h = None
+        self.__delta_b_h = None
+
+        if input_shape is not None:
+            self.connection(None)
+
+    @property
+    def W_r(self):
+        return self.__W_r
+
+    @W_r.setter
+    def W_r(self, W_r):
+        self.__W_r = W_r
+
+    @property
+    def U_r(self):
+        return self.__U_r
+
+    @U_r.setter
+    def U_r(self, U_r):
+        self.__U_r = U_r
+
+    @property
+    def b_r(self):
+        return self.__b_r
+
+    @b_r.setter
+    def b_r(self, b_r):
+        self.__b_r = b_r
+
+    @property
+    def delta_W_r(self):
+        return self.__delta_W_r
+
+    @delta_W_r.setter
+    def delta_W_r(self, delta_W_r):
+        self.__delta_W_r = delta_W_r
+
+    @property
+    def delta_U_r(self):
+        return self.__delta_U_r
+
+    @delta_U_r.setter
+    def delta_U_r(self, delta_U_r):
+        self.__delta_U_r = delta_U_r
+
+    @property
+    def delta_b_r(self):
+        return self.__delta_b_r
+
+    @delta_b_r.setter
+    def delta_b_r(self, delta_b_r):
+        self.__delta_b_r = delta_b_r
+
+    @property
+    def W_z(self):
+        return self.__W_z
+
+    @W_z.setter
+    def W_z(self, W_z):
+        self.__W_z = W_z
+
+    @property
+    def U_z(self):
+        return self.__U_z
+
+    @U_z.setter
+    def U_z(self, U_z):
+        self.__U_z = U_z
+
+    @property
+    def b_z(self):
+        return self.__b_z
+
+    @b_z.setter
+    def b_z(self, b_z):
+        self.__b_z = b_z
+
+    @property
+    def delta_W_z(self):
+        return self.__delta_W_z
+
+    @delta_W_z.setter
+    def delta_W_z(self, delta_W_z):
+        self.__delta_W_z = delta_W_z
+
+    @property
+    def delta_U_z(self):
+        return self.__delta_U_z
+
+    @delta_U_z.setter
+    def delta_U_z(self, delta_U_z):
+        self.__delta_U_z = delta_U_z
+
+    @property
+    def delta_b_z(self):
+        return self.__delta_b_z
+
+    @delta_b_z.setter
+    def delta_b_z(self, delta_b_z):
+        self.__delta_b_z = delta_b_z
+
+    @property
+    def W_h(self):
+        return self.__W_h
+
+    @W_h.setter
+    def W_h(self, W_h):
+        self.__W_h = W_h
+
+    @property
+    def U_h(self):
+        return self.__U_h
+
+    @U_h.setter
+    def U_h(self, U_h):
+        self.__U_h = U_h
+
+    @property
+    def b_h(self):
+        return self.__b_h
+
+    @b_h.setter
+    def b_h(self, b_h):
+        self.__b_h = b_h
+
+    @property
+    def delta_W_h(self):
+        return self.__delta_W_h
+
+    @delta_W_h.setter
+    def delta_W_h(self, delta_W_h):
+        self.__delta_W_h = delta_W_h
+
+    @property
+    def delta_U_h(self):
+        return self.__delta_U_h
+
+    @delta_U_h.setter
+    def delta_U_h(self, delta_U_h):
+        self.__delta_U_h = delta_U_h
+
+    @property
+    def delta_b_h(self):
+        return self.__delta_b_h
+
+    @delta_b_h.setter
+    def delta_b_h(self, delta_b_h):
+        self.__delta_b_h = delta_b_h
+
+    @property
+    def params(self):
+        if self.use_bias:
+            return [self.W_r, self.U_r, self.b_r,
+                    self.W_z, self.U_z, self.b_z,
+                    self.W_h, self.U_h, self.b_h]
+        return [self.W_r, self.U_r,
+                self.W_z, self.U_z,
+                self.W_h, self.U_h]
+
+    @property
+    def grads(self):
+        if self.use_bias:
+            return [self.delta_W_r, self.delta_U_r, self.delta_b_r,
+                    self.delta_W_z, self.delta_U_z, self.delta_b_z,
+                    self.delta_W_h, self.delta_U_h, self.delta_b_h]
+        return [self.delta_W_r, self.delta_U_r,
+                self.delta_W_z, self.delta_U_z,
+                self.delta_W_h, self.delta_U_h]
+
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
+    def connection(self, pre_layer):
+        super(GRU, self).connection(pre_layer)
+        self.W_r = self.kernel_initializer((self.input_dim, self.output_dim))
+        self.U_r = self.recurrent_initializer((self.output_dim, self.output_dim))
+        self.b_r = np.zeros((self.output_dim,))
+
+        self.W_z = self.kernel_initializer((self.input_dim, self.output_dim))
+        self.U_z = self.recurrent_initializer((self.output_dim, self.output_dim))
+        self.b_z = np.zeros((self.output_dim,))
+
+        self.W_h = self.kernel_initializer((self.input_dim, self.output_dim))
+        self.U_h = self.recurrent_initializer((self.output_dim, self.output_dim))
+        self.b_h = np.zeros((self.output_dim,))
+
+    def forward(self, inputs, *args, **kwargs):
+        # inputs: batch_size, time_step, out_dim
+        inputs = np.asarray(inputs)
+        self.inputs = inputs
+        assert list(inputs.shape[1:]) == list(self.input_shape[1:])
+        self.input_shape = inputs.shape
+        self.output_shape[0] = self.input_shape[0]
+        nb_batch, nb_seq, nb_input_dim = self.input_shape
+
+        self.outputs = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.logits_r = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.logits_z = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.logits_h = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.logits_s = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.outputs_r = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.outputs_z = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.outputs_h = np.zeros((nb_batch, nb_seq, self.output_dim))
+        self.outputs_s = np.zeros((nb_batch, nb_seq, self.output_dim))
+        for t in xrange(nb_seq):
+            h_pre = np.zeros((nb_batch, self.output_dim)) \
+                        if t == 0 else self.outputs[:, t - 1, :]
+            x_now = self.inputs[:,t,:]
+            r = x_now.dot(self.W_r) + h_pre.dot(self.U_r)
+            z = x_now.dot(self.W_z) + h_pre.dot(self.U_z)
+            s = x_now.dot(self.W_h)
+
+            if self.use_bias:
+                r += self.b_r
+                z += self.b_z
+                s += self.b_h
+
+            self.logits_r[:,t,:] = r
+            self.logits_z[:,t,:] = z
+
+            r = self.recurrent_activator.forward(r)
+            z = self.recurrent_activator.forward(z)
+
+            s = s + (r * h_pre).dot(self.U_h)
+            self.logits_s[:,t,:] = s
+            s = self.activator.forward(s)
+
+            self.outputs_r[:,t,:] = r
+            self.outputs_z[:,t,:] = z
+            self.outputs_s[:,t,:] = s
+
+            self.outputs[:,t,:] = z * h_pre + (1 - z) * s
+
+        if self.return_sequences:
+            return self.outputs
+        else:
+            return self.outputs[:,-1,:]
+
+    def backward(self, pre_delta, *args, **kwargs):
+        """BPTT.
+
+        根据LSTM的BPTT,这个很容易自己推导出来.
+        思路步骤:
+        1. 求出loss关于h_{t-1},z_t,r_t和s_t的logit（激活函数里面的线性和）的偏导
+        2. 所有其余的偏导（W,U,b,以及往前一个timestep和往前一层传的偏导）都可以由上面的几个偏导表示
+
+        # Params
+        pre_delta: gradients from the next layer.
+
+        # Return
+        gradients to the previous layer.
+        """
+        self.delta_W_r = np.zeros(self.W_r.shape)
+        self.delta_W_z = np.zeros(self.W_z.shape)
+        self.delta_W_h = np.zeros(self.W_h.shape)
+        self.delta_U_r = np.zeros(self.U_r.shape)
+        self.delta_U_z = np.zeros(self.U_z.shape)
+        self.delta_U_h = np.zeros(self.U_h.shape)
+        if self.use_bias:
+            self.delta_b_r = np.zeros(self.b_r.shape)
+            self.delta_b_z = np.zeros(self.b_z.shape)
+            self.delta_b_h = np.zeros(self.b_h.shape)
+
+        nb_batch, nb_seq, nb_input_dim = self.input_shape
+        nb_output_dim = self.output_dim
+        self.delta = np.zeros(self.input_shape)
+        if self.return_sequences:
+            assert len(pre_delta.shape) == 3
+            # 此处的time_delta为delta_E/delta_output
+            time_delta = pre_delta[:,nb_seq - 1,:]
+        else:
+            assert len(pre_delta.shape) == 2
+            # 此处的time_delta为delta_E/delta_output
+            time_delta = pre_delta
+        for t in np.arange(nb_seq)[::-1]:
+            logit_s = self.logits_s[:,t,:]
+            logit_z = self.logits_z[:,t,:]
+            logit_r = self.logits_r[:,t,:]
+
+            output_z = self.outputs_z[:,t,:]
+            output_r = self.outputs_r[:,t,:]
+            output_s = self.outputs_s[:,t,:]
+
+            pre_h = np.zeros((nb_batch, nb_output_dim)) \
+                        if t == 0 else self.outputs[:,t - 1,:]
+            cur_x = self.inputs[:,t,:]
+            # cell state
+            pre_delta_s = time_delta * (1 - output_z) * self.activator.backward(logit_s)
+            pre_delta_z = (time_delta * pre_h - time_delta * output_s) * \
+                          self.recurrent_activator.backward(logit_z)
+            pre_delta_r = np.dot(pre_delta_s[:,None,:], self.U_h.T).reshape(-1, nb_output_dim) * \
+                          (pre_h * self.recurrent_activator.backward(logit_r))
+
+            # 求U的梯度
+            self.delta_U_r += np.dot(pre_h.T, pre_delta_r) / nb_batch
+            self.delta_U_z += np.dot(pre_h.T, pre_delta_z) / nb_batch
+            self.delta_U_h += np.dot((output_r * pre_h).T, pre_delta_s) / nb_batch
+            # 求W的梯度
+            self.delta_W_r += np.dot(cur_x.T, pre_delta_r) / nb_batch
+            self.delta_W_z += np.dot(cur_x.T, pre_delta_z) / nb_batch
+            self.delta_W_h += np.dot(cur_x.T, pre_delta_s) / nb_batch
+            # 求b的梯度
+            if self.use_bias:
+                self.delta_b_r += np.mean(pre_delta_r, axis=0)
+                self.delta_b_z += np.mean(pre_delta_z, axis=0)
+                self.delta_b_h += np.mean(pre_delta_s, axis=0)
+            # 求传到上一层的误差,layerwise
+            self.delta[:,t,:] = np.dot(pre_delta_r, self.W_r.T) + \
+                                np.dot(pre_delta_z, self.W_z.T) + \
+                                np.dot(pre_delta_s, self.W_h.T)
+            # 求同一层不同时间的误差,timewise
+            if t > 0:
+                time_delta = np.dot(pre_delta_z, self.U_z.T) + time_delta * output_z + \
+                             np.dot(pre_delta_s[:,None,:], self.U_h.T).reshape(-1, nb_output_dim) * output_r + \
+                             np.dot(pre_delta_r, self.U_r.T)
+                if self.return_sequences:
+                    time_delta += pre_delta[:,t - 1,:]
+        return self.delta

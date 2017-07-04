@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from lightnn.layers import AvgPooling, MaxPooling
-from lightnn.layers import SimpleRNN, LSTM, Softmax, Flatten
+from lightnn.layers import SimpleRNN, LSTM, GRU, Softmax, Flatten
 from lightnn.models import Sequential
 from lightnn.base import Adam
 
@@ -82,5 +82,21 @@ def main3(max_iter):
     net.fit(batch_in, batch_out, max_iter=max_iter, batch_size=batch_size, verbose=2)
 
 
+def main4(max_iter):
+    batch_size, vocab_size, time_steps, batch_in, batch_out = get_data()
+
+    print("Building model ...")
+    net = Sequential()
+    net.add(GRU(output_dim=100, input_shape=(batch_size, time_steps, vocab_size),
+                      return_sequences=True))
+    net.add(GRU(output_dim=100))
+    net.add(Softmax(output_dim=vocab_size))
+
+    net.compile(loss='CCE', optimizer=Adam(lr=0.001, grad_clip=5.))
+
+    print("Train model ...")
+    net.fit(batch_in, batch_out, max_iter=max_iter, batch_size=batch_size, verbose=2)
+
+
 if __name__ == '__main__':
-    main3(100)
+    main2(100)
