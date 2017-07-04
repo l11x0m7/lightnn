@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/Version-0.0.3-blue.svg) ![Version](https://img.shields.io/badge/Python-2.7-green.svg) ![Version](https://img.shields.io/badge/Numpy-1.13.0-yellow.svg) ![Version](https://img.shields.io/badge/Linux-x.x.x-red.svg)
+![Version](https://img.shields.io/badge/Version-0.0.4-blue.svg) ![Version](https://img.shields.io/badge/Python-2.7-green.svg) ![Version](https://img.shields.io/badge/Numpy-1.13.0-yellow.svg) ![Version](https://img.shields.io/badge/Linux-x.x.x-red.svg)
 
 # lightnn
 The light(\`light\` means not many codes here) deep learning framework for study and for fun. Join us!

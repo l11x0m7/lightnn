@@ -7,7 +7,7 @@ from setuptools import find_packages
   
 PACKAGE = "lightnn"  
 NAME = "lightnn"  
-DESCRIPTION = "This package can download funds data from https://github.com/l11x0m7/lightnn.For details, please visit https://skyhigh233.com."  
+DESCRIPTION = "This package can download funds data from https://github.com/l11x0m7/lightnn. For details, please visit https://skyhigh233.com."  
 AUTHOR = "Xuming Lin"  
 AUTHOR_EMAIL = "l11x0m7@gmail.com"  
 URL = "https://github.com/l11x0m7/lightnn"  
