@@ -599,6 +599,7 @@ class LSTM(Recurrent):
         思路步骤:
         1. 求出loss关于h_{t-1},i_t,o_t,f_t和c_tilde_t的logit（激活函数里面的线性和）的偏导
         2. 所有其余的偏导（W,U,b,以及往前一个timestep和往前一层传的偏导）都可以由上面的几个偏导表示
+        3. 注意loss关于c_t的偏导,包含两个:一个是c_{t+1}中的c_t,一个是h_t中的c_t
 
         # Params
         pre_delta: gradients from the next layer.

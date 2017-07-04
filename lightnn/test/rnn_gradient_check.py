@@ -503,4 +503,4 @@ if __name__ == '__main__':
     # vector_lstm_gradient_check()
     # sequence_lstm_gradient_check()
     # vector_gru_gradient_check()
-    # sequence_gru_gradient_check()
+    sequence_gru_gradient_check()

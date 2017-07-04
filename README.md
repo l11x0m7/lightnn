@@ -1,9 +1,19 @@
-![Version](https://img.shields.io/badge/Version-0.0.3-blue.svg) ![Version](https://img.shields.io/badge/Python-2.7-green.svg) ![Version](https://img.shields.io/badge/Numpy-1.13.0-green.svg)
+![Version](https://img.shields.io/badge/Version-0.0.3-blue.svg) ![Version](https://img.shields.io/badge/Python-2.7-green.svg) ![Version](https://img.shields.io/badge/Numpy-1.13.0-yellow.svg) ![Version](https://img.shields.io/badge/Linux-x.x.x-red.svg)
 
 # lightnn
 The light(\`light\` means not many codes here) deep learning framework for study and for fun. Join us!
 
-## Package structure:
+## How to install
+
+### pip install
+
+`pip install lightnn`
+
+### python install
+
+`python setup.py install`
+
+## Package structure
 
 lightnn  
 ├── __init__.py  
@@ -20,10 +30,12 @@ lightnn
 │   ├── optimizers.py  
 │   └── optimizers.pyc  
 ├── examples  
+│   ├── NeuralNetwork.py  
 │   ├── __init__.py  
-│   ├── cnn.py  
-│   ├── nn.py  
-│   └── test_model.py  
+│   ├── data  
+│   │   └── tiny_shakespeare.txt  
+│   ├── lm.py  
+│   └── mnist.py  
 ├── layers  
 │   ├── __init__.py  
 │   ├── __init__.pyc  
@@ -35,17 +47,23 @@ lightnn
 │   ├── layer.pyc  
 │   ├── pooling.py  
 │   ├── pooling.pyc  
-│   └── recurrent.py  
+│   ├── recurrent.py  
+│   └── recurrent.pyc  
 ├── models  
-│   ├── NeuralNetwork.py  
 │   ├── __init__.py  
 │   ├── __init__.pyc  
 │   ├── models.py  
 │   └── models.pyc  
 ├── ops.py  
-└── ops.pyc  
+├── ops.pyc  
+└── test  
+    ├── __init__.py  
+    ├── cnn_gradient_check.py  
+    ├── nn_gradient_check.py  
+    ├── rnn_gradient_check.py  
+    └── test_activators.py   
 
-## Modual structure:
+## Modual structure
 
 ### activations
 
@@ -108,7 +126,7 @@ For details, please visit [skyhigh233](http://skyhigh233.com).
 
 ## References
 1. [Keras](https://github.com/fchollet/keras): a polular deep learning framework based on tensorflow and theano.
-2. [NumpyDL](https://github.com/oujago/NumpyDL): a simple deep learning framework with manual-grad, totally written with python and numpy.
+2. [NumpyDL](https://github.com/oujago/NumpyDL): a simple deep learning framework with manual-grad, totally written with python and numpy.([Warning] Some errors in `backward` part of this project)
 3. [paradox](https://github.com/ictxiangxin/paradox): a simple deep learning framework with symbol calculation system. Lightweight for learning and for fun. It's totally written with python and numpy.
-4. [Bingtao Han's blogs](https://zybuluo.com/hanbingtao/): easy way to go for deep learning.
+4. [Bingtao Han's blogs](https://zybuluo.com/hanbingtao/): easy way to go for deep learning([Warning] Some calculation errors in `RNN` part).
 
