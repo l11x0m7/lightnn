@@ -65,6 +65,11 @@ lightnn
 
 ## Modual structure
 
+### models
+
+* Sequential
+* Model
+
 ### activations
 
 * identity(dense)
@@ -91,6 +96,7 @@ lightnn
 * xavier uniform initializer(glorot uniform initializer)
 * default weight initializer
 * large weight initializer
+* orthogonal initializer
 
 ### optimizers
 
@@ -121,8 +127,6 @@ lightnn
 * LSTM Language Model
 * GRU Language Model
 
-
-For details, please visit [skyhigh233](http://skyhigh233.com).
 
 ## References
 1. [Keras](https://github.com/fchollet/keras): a polular deep learning framework based on tensorflow and theano.
