@@ -118,6 +118,7 @@ lightnn
 * Softmax
 * Dropout
 * Flatten
+* Activation
 * RNN
 * LSTM
 * GRU

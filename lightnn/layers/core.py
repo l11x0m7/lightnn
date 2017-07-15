@@ -82,6 +82,7 @@ class FullyConnected(Layer):
         if pre_layer is None:
             if self.input_dim is None:
                 raise ValueError('input_size must not be `None` as the first layer.')
+            self.input_shape = [None, self.input_dim]
             self.output_shape = [None, self.output_dim]
         else:
             pre_layer.next_layer = self

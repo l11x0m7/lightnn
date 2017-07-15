@@ -6,7 +6,7 @@ from __future__ import print_function
 import numpy as np
 
 from lightnn.models.models import Sequential, Model
-from lightnn.layers.core import Dense, Flatten, Softmax, Input, Dropout
+from lightnn.layers.core import Dense, Flatten, Softmax, Input, Dropout, Activation
 from lightnn.layers.convolutional import Conv2d
 from lightnn.layers.pooling import MaxPooling, AvgPooling
 from lightnn.base.activations import Relu, Selu
@@ -137,8 +137,9 @@ def model_mlp_mnist():
     input_dim = training_data.shape[1]
     label_size = training_label.shape[1]
 
-    dense_1 = Dense(300, input_dim=input_dim, activator='selu')
-    dropout_1 = Dropout(0.2)(dense_1)
+    dense_1 = Dense(300, input_dim=input_dim, activator=None)
+    dense_2 = Activation('selu')(dense_1)
+    dropout_1 = Dropout(0.2)(dense_2)
     softmax_1 = Softmax(label_size)(dropout_1)
     model = Model(dense_1, softmax_1)
     model.compile('CCE', optimizer=Adadelta())
