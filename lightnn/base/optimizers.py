@@ -35,23 +35,27 @@ class SGD(Optimizer):
 
 class Momentum(Optimizer):
     """
-        Performs stochastic gradient descent with momentum.
+    Performs stochastic gradient descent with momentum.
 
-        momentum: Scalar between 0 and 1 giving the momentum value.
-            Setting momentum = 0 reduces to sgd.
-        velocity: A numpy array of the same shape as w and dw used to store a moving
-            average of the gradients.
+    momentum: Scalar between 0 and 1 giving the momentum value.
+              Setting momentum = 0 reduces to sgd.
+    velocity: A numpy array of the same shape as w and dw used to store a moving
+              average of the gradients.
     """
-    def __init__(self, momentum=0.9, *args, **kwargs):
+    def __init__(self, momentum=0.9, nesterov=False, *args, **kwargs):
         super(Momentum, self).__init__(*args, **kwargs)
         self.momentum = momentum
+        self.nesterov = nesterov
         self.velocity = dict()
 
     def minimize(self, params, grads):
         for p, g in zip(params, grads):
             v = self.velocity.get(id(p), np.zeros_like(p))
             v = self.momentum * v - self.lr * g
-            p += v
+            if self.nesterov:
+                p = p + self.momentum * v - self.lr * g
+            else:
+                p = p + v
             self.velocity[id(p)] = v
         super(Momentum, self).update()
 
@@ -66,8 +70,8 @@ class Momentum(Optimizer):
 
 class RMSProp(Optimizer):
     """
-        Uses the RMSProp update rule, which uses a moving average of squared gradient
-        values to set adaptive per-parameter learning rates.
+    Uses the RMSProp update rule, which uses a moving average of squared gradient
+    values to set adaptive per-parameter learning rates.
 
     learning_rate: Scalar learning rate.
     decay_rate: Scalar between 0 and 1 giving the decay rate for the squared
@@ -142,21 +146,73 @@ class Adagrad(Optimizer):
     def __init__(self, epsilon=1e-7, *args, **kwargs):
         super(Adagrad, self).__init__(*args, **kwargs)
         self.epsilon = epsilon
-        self.r = dict()
+        self.__r = dict()
 
     def minimize(self, params, grads):
         for p, g in zip(params, grads):
-            self.r.setdefault(id(p), np.zeros_like(p))
-            self.r[id(p)] += g ** 2
-            p -= self.lr / (self.epsilon + np.sqrt(self.r[id(p)])) * g
+            self.__r.setdefault(id(p), np.zeros_like(p))
+            self.__r[id(p)] += g ** 2
+            p -= self.lr / (self.epsilon + np.sqrt(self.__r[id(p)])) * g
         super(Adagrad, self).update()
 
     def maximum(self, params, grads):
         for p, g in zip(params, grads):
-            self.r.setdefault(id(p), np.zeros_like(p))
-            self.r[id(p)] += g ** 2
-            p += self.lr / (self.epsilon + np.sqrt(self.r[id(p)])) * g
+            self.__r.setdefault(id(p), np.zeros_like(p))
+            self.__r[id(p)] += g ** 2
+            p += self.lr / (self.epsilon + np.sqrt(self.__r[id(p)])) * g
         super(Adagrad, self).update()
+
+
+class Adadelta(Optimizer):
+    """Adadelta optimizer.
+
+    It is recommended to leave the parameters of this optimizer
+    at their default values.
+
+    # Arguments
+        lr: float >= 0. Learning rate.
+            It is recommended to leave it at the default value.
+        rho: float >= 0.
+        epsilon: float >= 0. Fuzz factor.
+        decay: float >= 0. Learning rate decay over each update.
+
+    # References
+        - [Adadelta - an adaptive learning rate method](http://arxiv.org/abs/1212.5701)
+    """
+
+    def __init__(self, lr=1.0, rho=0.95, epsilon=1e-8, decay=0.,
+                 *args, **kwargs):
+        super(Adadelta, self).__init__(lr=lr, decay=decay, *args, **kwargs)
+        self.rho = rho
+        self.epsilon = epsilon
+        self.__accmulators = dict()
+        self.__delta_accumulators = dict()
+
+    def minimize(self, params, grads):
+        shapes = [p.shape for p in params]
+        # accumulate gradients
+        accumulators = [np.zeros(shape) for shape in shapes]
+        # accumulate updates
+        delta_accumulators = [np.zeros(shape) for shape in shapes]
+        self.weights = accumulators + delta_accumulators
+        self.updates = []
+
+        for p, g in zip(params, grads):
+            a = self.__accmulators.setdefault(id(p), np.zeros_like(p))
+            d_a = self.__delta_accumulators.setdefault(id(p), np.zeros_like(p))
+            # update accumulator
+            new_a = self.rho * a + (1. - self.rho) * np.square(g)
+
+            # use the new accumulator and the *old* delta_accumulator
+            update = g * np.sqrt(d_a + self.epsilon) / np.sqrt(new_a + self.epsilon)
+
+            p -= self.lr * update
+
+            # update delta_accumulator
+            new_d_a = self.rho * d_a + (1 - self.rho) * np.square(update)
+            self.__accmulators[id(p)] = new_a
+            self.__delta_accumulators[id(p)] = new_d_a
+        super(Adadelta, self).update()
 
 
 def _grad_clip(grad, clip):
@@ -164,6 +220,15 @@ def _grad_clip(grad, clip):
         return np.clip(grad, -clip, clip)
     else:
         return grad
+
+
+# name aliases
+sgd = SGD
+momentum = Momentum
+rmsprop = RMSProp
+adam = Adam
+adagrad = Adagrad
+adadelta = Adadelta
 
 
 def get(optimizer):
@@ -179,6 +244,8 @@ def get(optimizer):
             return Adam()
         elif optimizer in ('adagrad', ):
             return Adagrad()
+        elif optimizer in ('adadelta',):
+            return Adadelta()
         else:
             raise ValueError('Unknown optimizer name `{}`'.format(optimizer))
     elif isinstance(optimizer, Optimizer):

@@ -77,6 +77,14 @@ def orthogonal_initializer(shape, gain=1., seed=None):
     return gain * q[:shape[0], :shape[1]]
 
 
+def zeros(shape):
+    return np.zeros(shape)
+
+
+def ones(shape):
+    return np.ones(shape)
+
+
 def get(initializer):
     if isinstance(initializer, str):
         initializer = initializer.lower()
@@ -89,6 +97,10 @@ def get(initializer):
             return large_weight_initializer
         elif initializer in ('orthogonal_initializer', 'orthogonal initializer'):
             return orthogonal_initializer
+        elif initializer in ('zeros', 'zero'):
+            return zeros
+        elif initializer in ('ones', 'one'):
+            return ones
         else:
             raise ValueError('Unknown initializer name `{}`'.format(initializer))
     elif isinstance(initializer, type(lambda k:k)):

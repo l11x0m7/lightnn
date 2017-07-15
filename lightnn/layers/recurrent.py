@@ -63,6 +63,7 @@ class SimpleRNN(Recurrent):
                  activator='tanh',
                  kernel_initializer='glorot_uniform_initializer',
                  recurrent_initializer='orthogonal_initializer',
+                 bias_initializer='zeros',
                  use_bias=True,
                  return_sequences=False,
                  **kwargs):
@@ -70,6 +71,7 @@ class SimpleRNN(Recurrent):
         self.activator = activations.get(activator)
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.recurrent_initializer = initializers.get(recurrent_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
         self.use_bias = use_bias
         self.W = None
         self.U = None
@@ -148,7 +150,8 @@ class SimpleRNN(Recurrent):
         super(SimpleRNN, self).connection(pre_layer)
         self.W = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b = np.zeros((self.output_dim,))
+        if self.use_bias:
+            self.b = self.bias_initializer((self.output_dim, ))
 
     def forward(self, inputs, *args, **kwargs):
         # clear states
@@ -251,6 +254,7 @@ class LSTM(Recurrent):
                  recurrent_activator='sigmoid',
                  kernel_initializer='glorot_uniform_initializer',
                  recurrent_initializer='orthogonal_initializer',
+                 bias_initializer='zeros',
                  use_bias=True,
                  return_sequences=False,
                  **kwargs):
@@ -260,6 +264,7 @@ class LSTM(Recurrent):
         self.recurrent_activator = activations.get(recurrent_activator)
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.recurrent_initializer = initializers.get(recurrent_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
 
         # input gate
         self.__W_i = None
@@ -520,19 +525,21 @@ class LSTM(Recurrent):
         super(LSTM, self).connection(pre_layer)
         self.W_i = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U_i = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b_i = np.zeros((self.output_dim,))
 
         self.W_o = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U_o = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b_o = np.zeros((self.output_dim,))
 
         self.W_f = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U_f = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b_f = np.zeros((self.output_dim,))
 
         self.W_c = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U_c = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b_c = np.zeros((self.output_dim,))
+
+        if self.use_bias:
+            self.b_i = self.bias_initializer((self.output_dim, ))
+            self.b_o = self.bias_initializer((self.output_dim, ))
+            self.b_f = self.bias_initializer((self.output_dim, ))
+            self.b_c = self.bias_initializer((self.output_dim, ))
 
     def forward(self, inputs, *args, **kwargs):
         # inputs: batch_size, time_step, out_dim
@@ -709,6 +716,7 @@ class GRU(Recurrent):
                  recurrent_activator='sigmoid',
                  kernel_initializer='glorot_uniform_initializer',
                  recurrent_initializer='orthogonal_initializer',
+                 bias_initializer='zeros',
                  use_bias=True,
                  return_sequences=False,
                  **kwargs):
@@ -718,6 +726,7 @@ class GRU(Recurrent):
         self.recurrent_activator = activations.get(recurrent_activator)
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.recurrent_initializer = initializers.get(recurrent_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
 
         # reset gate
         self.__W_r = None
@@ -918,15 +927,17 @@ class GRU(Recurrent):
         super(GRU, self).connection(pre_layer)
         self.W_r = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U_r = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b_r = np.zeros((self.output_dim,))
 
         self.W_z = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U_z = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b_z = np.zeros((self.output_dim,))
 
         self.W_h = self.kernel_initializer((self.input_dim, self.output_dim))
         self.U_h = self.recurrent_initializer((self.output_dim, self.output_dim))
-        self.b_h = np.zeros((self.output_dim,))
+
+        if self.use_bias:
+            self.b_r = self.bias_initializer((self.output_dim, ))
+            self.b_z = self.bias_initializer((self.output_dim, ))
+            self.b_h = self.bias_initializer((self.output_dim, ))
 
     def forward(self, inputs, *args, **kwargs):
         # inputs: batch_size, time_step, out_dim

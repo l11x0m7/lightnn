@@ -93,6 +93,8 @@ lightnn
 
 ### initializers
 
+* zeros
+* ones
 * xavier uniform initializer(glorot uniform initializer)
 * default weight initializer
 * large weight initializer
@@ -101,10 +103,11 @@ lightnn
 ### optimizers
 
 * SGD
-* Momentum
+* Momentum(Nestrov included)
 * RMSProp
 * Adam
 * Adagrad
+* Adadelta
 
 ### layers
 

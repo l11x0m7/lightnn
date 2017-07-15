@@ -20,6 +20,8 @@ class FullyConnected(Layer):
         self.output_dim = output_dim
         self.activator = activations.get(activator)
         self.initializer = initializer
+        self.input_shape = None
+        self.output_shape = None
         if self.input_dim is not None:
             self.connection(None)
 
@@ -217,3 +219,68 @@ class Dropout(Layer):
             return self.mask * pre_delta
         else:
             return pre_delta
+
+
+class Activation(Layer):
+    """Applies an activation function to an output.
+
+    # Arguments
+        activation: name of activation function to use
+            (see: [activations](../activations.py)).
+
+    # Input shape
+        Arbitrary. Use the keyword argument `input_shape`
+        (tuple of integers, does not include the samples axis)
+        when using this layer as the first layer in a model.
+
+    # Output shape
+        Same shape as input.
+    """
+    def __init__(self, activator, input_shape=None):
+        super(Activation, self).__init__()
+        self.activator = activations.get(activator)
+        self.input_shape = input_shape
+
+    @property
+    def params(self):
+        return list()
+
+    @property
+    def grads(self):
+        return list()
+
+    def call(self, pre_layer=None, *args, **kwargs):
+        self.connection(pre_layer)
+        return self
+
+    def connection(self, pre_layer):
+        self.pre_layer = pre_layer
+        if pre_layer is None:
+            if self.input_shape is None:
+                raise ValueError('input_size must not be `None` as the first layer.')
+            self.output_shape = self.input_shape
+        else:
+            pre_layer.next_layer = self
+            self.input_shape = pre_layer.output_shape
+            self.output_shape = self.input_shape
+
+    def forward(self, inputs, *args, **kwargs):
+        """
+        :param inputs: 2-D tensors, row represents samples, col represents features
+        :return: None
+        """
+        inputs = np.asarray(inputs)
+        if len(inputs.shape) == 1:
+            inputs = inputs[None,:]
+        assert list(self.input_shape[1:]) == list(inputs.shape[1:])
+        self.input_shape = inputs.shape
+        self.output_shape = self.input_shape
+        self.inputs = inputs
+        self.output = self.activator.forward(self.inputs)
+        return self.output
+
+    def backward(self, pre_delta, *args, **kwargs):
+        if len(pre_delta.shape) == 1:
+            pre_delta = pre_delta[None,:]
+        act_delta = pre_delta * self.activator.backward(self.inputs)
+        return act_delta
