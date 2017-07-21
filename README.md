@@ -13,55 +13,6 @@ The light(\`light\` means not many codes here) deep learning framework for study
 
 `python setup.py install`
 
-## Package structure
-
-lightnn  
-├── __init__.py  
-├── __init__.pyc  
-├── base  
-│   ├── __init__.py  
-│   ├── __init__.pyc  
-│   ├── activations.py  
-│   ├── activations.pyc  
-│   ├── initializers.py  
-│   ├── initializers.pyc  
-│   ├── losses.py  
-│   ├── losses.pyc  
-│   ├── optimizers.py  
-│   └── optimizers.pyc  
-├── examples  
-│   ├── NeuralNetwork.py  
-│   ├── __init__.py  
-│   ├── data  
-│   │   └── tiny_shakespeare.txt  
-│   ├── lm.py  
-│   └── mnist.py  
-├── layers  
-│   ├── __init__.py  
-│   ├── __init__.pyc  
-│   ├── convolutional.py  
-│   ├── convolutional.pyc  
-│   ├── core.py  
-│   ├── core.pyc  
-│   ├── layer.py  
-│   ├── layer.pyc  
-│   ├── pooling.py  
-│   ├── pooling.pyc  
-│   ├── recurrent.py  
-│   └── recurrent.pyc  
-├── models  
-│   ├── __init__.py  
-│   ├── __init__.pyc  
-│   ├── models.py  
-│   └── models.pyc  
-├── ops.py  
-├── ops.pyc  
-└── test  
-    ├── __init__.py  
-    ├── cnn_gradient_check.py  
-    ├── nn_gradient_check.py  
-    ├── rnn_gradient_check.py  
-    └── test_activators.py   
 
 ## Modual structure
 
@@ -72,7 +23,7 @@ lightnn
 
 ### activations
 
-* identity(dense)
+* identity(None)
 * sigmoid
 * relu
 * softmax
@@ -123,6 +74,18 @@ lightnn
 * LSTM
 * GRU
 
+### utils
+
+* label smoothing
+* sparse to dense
+
+### gradient check
+
+* Dense
+* CNN and Pooling
+* RNN, LSTM and GRU
+
+
 ### examples
 
 * MLP MNIST Classification
@@ -130,6 +93,11 @@ lightnn
 * RNN Language Model
 * LSTM Language Model
 * GRU Language Model
+
+## Document instructions
+
+* English for classes and functions
+* Chinese for annotation
 
 
 ## References
