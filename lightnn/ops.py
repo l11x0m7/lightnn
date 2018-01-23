@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 def _check_convolution_layer(filter_size, filter_num, zero_padding, stride):
     # if not isinstance(input_height, int):
     #     raise ValueError('`input_height` must be int')
