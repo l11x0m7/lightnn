@@ -15,6 +15,15 @@ from ..base.activations import Softmax as sm
 class FullyConnected(Layer):
     def __init__(self, output_dim, input_dim=None, activator='sigmoid',
                     initializer=xavier_uniform_initializer):
+        """
+        全连接层，即Dense层。
+
+        # Params
+        output_dim: 输出的维度，即当前层的神经元个数
+        input_dim: 输入的维度，即前一层的神经元个数
+        activator: 激活函数（如tanh、sigmoid或relu）
+        initializer: 初始化方法
+        """
         super(FullyConnected, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -97,8 +106,10 @@ class FullyConnected(Layer):
 
     def forward(self, inputs, *args, **kwargs):
         """
-        :param inputs: 2-D tensors, row represents samples, col represents features
-        :return: None
+        # Params
+        inputs: 2-D tensors, row represents samples, col represents features
+
+        # Return: None
         """
         inputs = np.asarray(inputs)
         if len(inputs.shape) == 1:
@@ -112,6 +123,9 @@ class FullyConnected(Layer):
         return self.output
 
     def backward(self, pre_delta, *args, **kwargs):
+        """
+        梯度更新
+        """
         if len(pre_delta.shape) == 1:
             pre_delta = pre_delta[None,:]
         batch_size, _ = self.inputs.shape
@@ -135,6 +149,9 @@ class Softmax(Dense):
 
 class Flatten(Layer):
     def __init__(self):
+        """
+        将输入的多维tensor展开成向量
+        """
         super(Flatten, self).__init__()
 
     @property
@@ -178,6 +195,13 @@ class Flatten(Layer):
 
 class Dropout(Layer):
     def __init__(self, dropout=0., axis=None):
+        """
+        Dropout层
+
+        # Params
+        dropout: dropout的概率
+        axis: 沿某个维度axis进行dropout操作，如果为None则是对所有元素进行
+        """
         super(Dropout, self).__init__()
         self.dropout = dropout
         self.axis = axis
@@ -223,21 +247,13 @@ class Dropout(Layer):
 
 
 class Activation(Layer):
-    """Applies an activation function to an output.
-
-    # Arguments
-        activation: name of activation function to use
-            (see: [activations](../activations.py)).
-
-    # Input shape
-        Arbitrary. Use the keyword argument `input_shape`
-        (tuple of integers, does not include the samples axis)
-        when using this layer as the first layer in a model.
-
-    # Output shape
-        Same shape as input.
-    """
     def __init__(self, activator, input_shape=None):
+        """
+        将激活函数应用到输入，得到经过激活函数的输出output
+
+        # Params
+        activator: 激活函数名
+        """
         super(Activation, self).__init__()
         self.activator = activations.get(activator)
         self.input_shape = input_shape
@@ -267,8 +283,12 @@ class Activation(Layer):
 
     def forward(self, inputs, *args, **kwargs):
         """
-        :param inputs: 2-D tensors, row represents samples, col represents features
-        :return: None
+        前向传播
+        # Params
+        inputs: 2-D tensors, row represents samples, col represents features
+
+        # Return
+        None
         """
         inputs = np.asarray(inputs)
         if len(inputs.shape) == 1:

@@ -92,4 +92,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
->>>>>>> e171bf268ee4b0a66784173bfcfed92abd5c52b8
+
+# insurance
+lightnn/examples/insurance_data/

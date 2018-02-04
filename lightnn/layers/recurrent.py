@@ -12,7 +12,8 @@ from ..base import activations
 
 
 class Recurrent(Layer):
-    """Abstract base class for recurrent layers.
+    """
+    Abstract base class for recurrent layers.
 
     Do not use in a model -- it's not a valid layer!
 
@@ -53,9 +54,10 @@ class Recurrent(Layer):
 
 
 class SimpleRNN(Recurrent):
-    """Simple RNN unit.
+    """
+    Simple RNN unit.
 
-        Fully-connected RNN where the output is to be fed back to input.
+    Fully-connected RNN where the output is to be fed back to input.
     """
 
     def __init__(self, output_dim,
@@ -234,18 +236,19 @@ class SimpleRNN(Recurrent):
 
 
 class LSTM(Recurrent):
-    """Long-Short Term Memory unit - Hochreiter 1997.
+    """
+    Long-Short Term Memory unit - Hochreiter 1997.
 
-       For a step-by-step description of the algorithm, see
-       [this tutorial](http://deeplearning.net/tutorial/lstm.html).
+   For a step-by-step description of the algorithm, see
+   [this tutorial](http://deeplearning.net/tutorial/lstm.html).
 
-       References:
-       1. LSTM: A Search Space Odyssey
-          (https://arxiv.org/pdf/1503.04069.pdf)
-       2. Backpropogating an LSTM: A Numerical Example
-          (https://blog.aidangomez.ca/2016/04/17/
-                    Backpropogating-an-LSTM-A-Numerical-Example/)
-       3. LSTM(https://github.com/nicodjimenez/lstm)
+   References:
+   1. LSTM: A Search Space Odyssey
+      (https://arxiv.org/pdf/1503.04069.pdf)
+   2. Backpropogating an LSTM: A Numerical Example
+      (https://blog.aidangomez.ca/2016/04/17/
+                Backpropogating-an-LSTM-A-Numerical-Example/)
+   3. LSTM(https://github.com/nicodjimenez/lstm)
     """
 
     def __init__(self, output_dim,
@@ -601,7 +604,8 @@ class LSTM(Recurrent):
             return self.outputs[:,-1,:]
 
     def backward(self, pre_delta, *args, **kwargs):
-        """BPTT.
+        """
+        BPTT.
 
         思路步骤:
         1. 求出loss关于h_{t-1},i_t,o_t,f_t和c_tilde_t的logit（激活函数里面的线性和）的偏导
@@ -703,11 +707,11 @@ class GRU(Recurrent):
     """
     Gated Recurrent Unit.
 
-       A variant of LSTM(simplified version)
+    A variant of LSTM(simplified version)
 
-       References:
-       1. LSTM: A Search Space Odyssey
-          (https://arxiv.org/pdf/1503.04069.pdf)
+    References:
+    1. LSTM: A Search Space Odyssey
+      (https://arxiv.org/pdf/1503.04069.pdf)
     """
 
     def __init__(self, output_dim,
@@ -992,7 +996,8 @@ class GRU(Recurrent):
             return self.outputs[:,-1,:]
 
     def backward(self, pre_delta, *args, **kwargs):
-        """BPTT.
+        """
+        BPTT.
 
         根据LSTM的BPTT,这个很容易自己推导出来.
         思路步骤:

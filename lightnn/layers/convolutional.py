@@ -15,18 +15,19 @@ from ..ops import _check_convolution_layer
 
 class Filter(object):
     def __init__(self, filter_shape, initializer):
-        """Filter unit.
+        """
+        Filter，过滤器，滤波器
 
         # Params
-        filter_shape: (filter_height, filter_width, input_depth).
-        initializer: initializer for filters.
+        filter_shape: (filter_height, filter_width, input_depth)
+        initializer: 滤波器的初始化方法
         """
         assert len(filter_shape) == 3
         self.filter_shape = filter_shape
-        self.__W = initializer(filter_shape)
-        self.__b = 0.
-        self.__delta_W = np.zeros(filter_shape)
-        self.__delta_b = 0.
+        self.__W = initializer(filter_shape) # filter权重矩阵
+        self.__b = 0. # filter偏置bias
+        self.__delta_W = np.zeros(filter_shape) # filter的权重矩阵梯度
+        self.__delta_b = 0. # filter的偏置梯度
 
     @property
     def W(self):
@@ -66,30 +67,27 @@ class Filter(object):
 
 
 class Conv2d(Layer):
-    """Convolutional Layer.
-        For 2d inputs(except depth dimension and batch dimension).
-    """
     def __init__(self, filter_size, filter_num, input_shape=None,
                  zero_padding=0, stride=1, activator=Relu, initializer=xavier_uniform_initializer):
         """
-        Convolution Layer.
+        二维卷积层，考虑输入包含width于height（除去输入的batch size与depth）
 
         # Params
-        filter_size: (height, width).
-        filter_num: the number of filters.
-        input_shape: (batch, height, width, depth).
-        zero_padding: zero padding number, int or tuple.
-        stride: int or tuple, given (stride_height, stride_width) or stride
-                        to control the size of output picture.
-        activator: activator like tanh or sigmoid or relu.
-        initializer: initializer for weights and biases.
+        filter_size: (height, width)
+        filter_num: filter个数
+        input_shape: (batch, height, width, depth)
+        zero_padding: zero-padding数, int or tuple
+        stride: 步长，int or tuple, 可以输入(stride_height, stride_width) 或 stride
+                        控制输出的feature map的大小
+        activator: 激活函数（如tanh、sigmoid或relu）
+        initializer: 所有filter的权重矩阵与偏置向量的初始化方法
         """
 
-        # expand zero padding
+        # 判定输入的参数zero_padding是否合法
         super(Conv2d, self).__init__()
         if isinstance(zero_padding, int):
             zero_padding = (zero_padding, zero_padding)
-        # check params
+        # 其余参数检验
         _check_convolution_layer(filter_size, filter_num, zero_padding, stride)
         self.input_shape = input_shape
         self.filter_size = filter_size
@@ -136,6 +134,13 @@ class Conv2d(Layer):
         return self
 
     def connection(self, pre_layer):
+        """
+        用来连接各个层的控制函数，输入前一层的Layer对象，并与当前层的Layer对象连接。
+
+        # Params
+        pre_layer: 之前的一层Layer对象
+
+        """
         if pre_layer is None:
             if self.input_shape is None:
                 raise ValueError('input_shape must not be `None` as the first layer.')
@@ -146,15 +151,22 @@ class Conv2d(Layer):
 
         assert len(self.input_shape) == 4
 
-        # calc output shape
+        # 计算输出的shape
         if self.output_shape is None:
             self.output_shape = self._calc_output_shape(self.input_shape, self.filter_size,
                                         self.stride, self.zero_padding, self.filter_num)
-        # add filters
+        # 增加需要学习的filters
         self.filters = [Filter(list(self.filter_size) + [self.input_shape[3]], self.initializer)
                         for _ in xrange(self.filter_num)]
 
     def forward(self, input, *args, **kwargs):
+        """
+        输入input，经过convolution layer后得到新的feature map
+
+        # Params
+        input: 输入的feature map
+
+        """
         self.input = np.asarray(input)
         assert list(self.input_shape[1:]) == list(self.input.shape[1:])
         self.input_shape = self.input.shape
@@ -166,6 +178,7 @@ class Conv2d(Layer):
         assert list(self.input.shape[1:]) == list(self.input_shape[1:])
         self.padded_input = self._padding(self.input, self.zero_padding)
 
+        # 将每个filter作用在input上，得到filter_size个output的feature map
         for o_c, filter in enumerate(self.filters):
             filter_W = filter.W
             filter_b = filter.b
@@ -177,8 +190,16 @@ class Conv2d(Layer):
         return self.output
 
     def backward(self, pre_delta_map, *args, **kwargs):
+        """
+        通过从前一层传递过来的误差计算当前各个参数（filters的参数）的梯度。
+
+        # Params
+        pre_delta_map: 从前一层传递的梯度，形状与当前层的输出output一致
+        """
+        # 当前层误差
         self.__delta = np.zeros(self.input_shape)
         pre_delta_map = pre_delta_map * self.activator.backward(self.logit)
+        # 按照stride对feature map进行扩展，在中间填充零
         expanded_pre_delta_map = self.__expand_sensitive_map(pre_delta_map)
         expanded_batch, expanded_height, expanded_width, expanded_channel = \
                                                             expanded_pre_delta_map.shape
@@ -188,7 +209,9 @@ class Conv2d(Layer):
         zero_padding[1] = (self.input_shape[2] + self.filter_size[1] - expanded_width - 1) // 2
         zero_padding[0] = max(0, zero_padding[0])
         zero_padding[1] = max(0, zero_padding[1])
+        # 对误差的feature map进行zero-padding
         padded_delta_map = self._padding(expanded_pre_delta_map, zero_padding)
+        # 对每个filter进行梯度计算
         for i, filter in enumerate(self.filters):
             rot_weights = np.zeros(filter.W.shape)
             for c in xrange(rot_weights.shape[2]):
@@ -210,6 +233,13 @@ class Conv2d(Layer):
         return self.delta
 
     def _padding(self, inputs, zero_padding):
+        """
+        对输入的feature map进行零填充
+
+        # Params
+        inputs: 输入的feature map
+        zero_padding: 需要填充的零的个数，输入是一个二元tuple，分别表示填充在高度和宽度上的零的个数
+        """
         inputs = np.asarray(inputs)
         if list(zero_padding) == [0, 0]:
             return inputs
@@ -228,6 +258,16 @@ class Conv2d(Layer):
             raise ValueError('Your input must be a 3-D or 4-D tensor.')
 
     def _conv(self, inputs, filter_W, outputs, filter_b, stride):
+        """
+        卷积操作。
+
+        # Params
+        inputs: 输入的feature map
+        filter_W: 当前滤波器的W
+        outputs: 输出的feature map
+        filter_b: 当前滤波器的b
+        stride: 步长
+        """
         inputs = np.asarray(inputs)
         if inputs.ndim == 2:
             inputs = inputs[:,:,None]
@@ -262,6 +302,9 @@ class Conv2d(Layer):
             bw = 0; ew = f_width
 
     def __expand_sensitive_map(self, pre_delta_map):
+        """
+        根据stride对梯度map进行零填充，用于梯度计算
+        """
         batch, height, width, depth = pre_delta_map.shape
         stride_height, stride_width = self.stride
         expanded_height = (height - 1) * stride_height + 1
@@ -276,9 +319,21 @@ class Conv2d(Layer):
         return expanded_pre_delta_map
 
     def _calc_output_size(self, input_len, filter_len, stride, zero_padding):
+        """
+        根据当前长度、stride大小以及零填充大小，判定输出长度。
+
+        # Params
+        input_len: 输入长度（可以是feature map的宽度或高度）
+        filter_len: filter的长度（对应的filter的宽度或高度）
+        stride: 步长
+        zero_padding: 零填充的长度（单侧）
+        """
         return (input_len + 2 * zero_padding - filter_len) // stride + 1
 
     def _calc_output_shape(self, input_shape, filter_shape, stride, zero_padding, filter_num):
+        """
+        计算output的shape，这个shape也是回传的误差的shape
+        """
         output_height = self._calc_output_size(input_shape[1], filter_shape[0],
                                                     stride[0], zero_padding[0])
         output_width = self._calc_output_size(input_shape[2], filter_shape[1],

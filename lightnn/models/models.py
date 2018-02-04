@@ -74,10 +74,11 @@ class Sequential(object):
             prev_layer = layer
 
 
-    def fit(self, X, y, max_iter=100, batch_size=64, shuffle=True,
+    def fit(self, X, y, epochs=100, batch_size=64, shuffle=True,
             validation_split=0., validation_data=None, verbose=1, file=sys.stdout):
-
         # prepare data
+        X = np.asarray(X)
+        y = np.asarray(y)
         train_X = X.astype(np.float64) if not np.issubdtype(np.float64, X.dtype) else X
         train_y = y.astype(np.float64) if not np.issubdtype(np.float64, y.dtype) else y
 
@@ -87,11 +88,13 @@ class Sequential(object):
             train_X, train_y = train_X[:-split], train_y[:-split]
         elif validation_data is not None:
             valid_X, valid_y = validation_data
+            valid_X = np.asarray(valid_X)
+            valid_y = np.asarray(valid_y)
         else:
             valid_X, valid_y = None, None
 
         iter_idx = 0
-        while iter_idx < max_iter:
+        while iter_idx < epochs:
             iter_idx += 1
 
             # shuffle
@@ -104,9 +107,12 @@ class Sequential(object):
 
             # train
             train_losses, train_predicts, train_targets = [], [], []
-            for b in range(train_y.shape[0] // batch_size):
+            total_round = train_y.shape[0] // batch_size
+            if total_round != train_y.shape[0] * 1.0 / batch_size:
+                total_round += 1
+            for b in range(total_round):
                 batch_begin = b * batch_size
-                batch_end = batch_begin + batch_size
+                batch_end = min(batch_begin + batch_size, train_y.shape[0])
                 x_batch = train_X[batch_begin:batch_end]
                 y_batch = train_y[batch_begin:batch_end]
 
@@ -133,14 +139,14 @@ class Sequential(object):
                 train_predicts.extend(y_pred)
                 train_targets.extend(y_batch)
                 if verbose == 2:
-                    runout = "iter %d, batch %d, train-[loss %.4f, acc %.4f]; " % (
-                        iter_idx, b + 1, float(np.mean(train_losses)),
+                    runout = "epoch %d/%d, batch %d/%d, train-[loss %.4f, acc %.4f]; " % (
+                        iter_idx, epochs, b + 1, total_round, float(np.mean(train_losses)),
                         float(self.accuracy(train_predicts, train_targets)))
                     print(runout, file=file)
 
             # output train status
-            runout = "iter %d, train-[loss %.4f, acc %.4f]; " % (
-                iter_idx, float(np.mean(train_losses)),
+            runout = "epoch %d/%d, train-[loss %.4f, acc %.4f]; " % (
+                iter_idx, epochs, float(np.mean(train_losses)),
                 float(self.accuracy(train_predicts, train_targets)))
 
             if valid_X is not None and valid_y is not None:
@@ -235,10 +241,11 @@ class Model(object):
         self.optimizer = optimizers.get(optimizer)
         self.loss = losses.get(loss)
 
-    def fit(self, X, y, max_iter=100, batch_size=64, shuffle=True,
+    def fit(self, X, y, epochs=100, batch_size=64, shuffle=True,
             validation_split=0., validation_data=None, verbose=1, file=sys.stdout):
-
         # prepare data
+        X = np.asarray(X)
+        y = np.asarray(y)
         train_X = X.astype(np.float64) if not np.issubdtype(np.float64, X.dtype) else X
         train_y = y.astype(np.float64) if not np.issubdtype(np.float64, y.dtype) else y
 
@@ -248,11 +255,13 @@ class Model(object):
             train_X, train_y = train_X[:-split], train_y[:-split]
         elif validation_data is not None:
             valid_X, valid_y = validation_data
+            valid_X = np.asarray(valid_X)
+            valid_y = np.asarray(valid_y)
         else:
             valid_X, valid_y = None, None
 
         iter_idx = 0
-        while iter_idx < max_iter:
+        while iter_idx < epochs:
             iter_idx += 1
 
             # shuffle
@@ -265,9 +274,12 @@ class Model(object):
 
             # train
             train_losses, train_predicts, train_targets = [], [], []
-            for b in range(train_y.shape[0] // batch_size):
+            total_round = train_y.shape[0] // batch_size
+            if total_round != train_y.shape[0] * 1.0 / batch_size:
+                total_round += 1
+            for b in range(total_round):
                 batch_begin = b * batch_size
-                batch_end = batch_begin + batch_size
+                batch_end = min(batch_begin + batch_size, train_y.shape[0])
                 x_batch = train_X[batch_begin:batch_end]
                 y_batch = train_y[batch_begin:batch_end]
 
@@ -298,14 +310,14 @@ class Model(object):
                 train_predicts.extend(y_pred)
                 train_targets.extend(y_batch)
                 if verbose == 2:
-                    runout = "iter %d, batch %d, train-[loss %.4f, acc %.4f]; " % (
-                        iter_idx, b + 1, float(np.mean(train_losses)),
+                    runout = "epoch %d/%d, batch %d/%d, train-[loss %.4f, acc %.4f]; " % (
+                        iter_idx, epochs, b + 1, total_round, float(np.mean(train_losses)),
                         float(self.accuracy(train_predicts, train_targets)))
                     print(runout, file=file)
 
             # output train status
-            runout = "iter %d, train-[loss %.4f, acc %.4f]; " % (
-                iter_idx, float(np.mean(train_losses)),
+            runout = "epoch %d/%d, train-[loss %.4f, acc %.4f]; " % (
+                iter_idx, epochs, float(np.mean(train_losses)),
                 float(self.accuracy(train_predicts, train_targets)))
 
             if valid_X is not None and valid_y is not None:

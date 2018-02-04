@@ -47,7 +47,7 @@ def main1(max_iter):
     net.compile(loss='CCE', optimizer=Adam(lr=0.01, grad_clip=5.))
 
     print("Train model ...")
-    net.fit(batch_in, batch_out, max_iter=max_iter, batch_size=batch_size, verbose=2)
+    net.fit(batch_in, batch_out, epochs=max_iter, batch_size=batch_size, verbose=2)
 
 
 def main2(max_iter):
@@ -63,7 +63,7 @@ def main2(max_iter):
     net.compile(loss='CCE', optimizer=Adam(lr=0.001, grad_clip=5.))
 
     print("Train model ...")
-    net.fit(batch_in, batch_out, max_iter=max_iter, batch_size=batch_size, verbose=2)
+    net.fit(batch_in, batch_out, epochs=max_iter, batch_size=batch_size, verbose=2)
 
 
 def main3(max_iter):
@@ -79,7 +79,7 @@ def main3(max_iter):
     net.compile(loss='CCE', optimizer=Adam(lr=0.001, grad_clip=5.))
 
     print("Train model ...")
-    net.fit(batch_in, batch_out, max_iter=max_iter, batch_size=batch_size, verbose=2)
+    net.fit(batch_in, batch_out, epochs=max_iter, batch_size=batch_size, verbose=2)
 
 
 def main4(max_iter):
@@ -95,7 +95,7 @@ def main4(max_iter):
     net.compile(loss='CCE', optimizer=Adam(lr=0.001, grad_clip=5.))
 
     print("Train model ...")
-    net.fit(batch_in, batch_out, max_iter=max_iter, batch_size=batch_size, verbose=2)
+    net.fit(batch_in, batch_out, epochs=max_iter, batch_size=batch_size, verbose=2)
 
 
 if __name__ == '__main__':

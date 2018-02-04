@@ -9,12 +9,16 @@ import numpy as np
 from ..layers.layer import Layer
 
 class MaxPoolingLayer(Layer):
-    """ Max pooling layer
-
-        For 3-D and 4-D
-    """
-
     def __init__(self, window_shape, input_shape=None, stride=1, zero_padding=0):
+        """
+        最大池化层
+
+        # Params
+        window_shape: pooling的window大小
+        input_shape: 输入的input形状
+        stride: 步长
+        zero_padding: 零填充
+        """
         super(MaxPoolingLayer, self).__init__()
         self.input_shape = input_shape
         if isinstance(zero_padding, int):
@@ -145,12 +149,16 @@ class MaxPoolingLayer(Layer):
 
 
 class AvgPoolingLayer(Layer):
-    """ mean/average pooing layer
-
-        For 3-D and 4-D
-    """
-
     def __init__(self, window_shape, input_shape=None, stride=1, zero_padding=0):
+        """
+        平均池化层
+
+        # Params
+        window_shape: pooling的window大小
+        input_shape: 输入的input形状
+        stride: 步长
+        zero_padding: 零填充
+        """
         super(AvgPoolingLayer, self).__init__()
         self.input_shape = input_shape
         if isinstance(zero_padding, int):
