@@ -94,10 +94,36 @@ class LogLikelihoodLoss(Loss):
         return y_hat - y
 
 
+class FocalLoss(Loss):
+    """
+        Kaiming He提出的用于解决样本类别不均衡与其导致的easy sample dominating的问题
+        一般前面接一个softmax层
+    """
+    # 这里我们使用默认的gama=2
+    gama = 2
+
+    @staticmethod
+    def forward(y_hat, y):
+        assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
+        assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
+        return -np.mean(np.sum(np.nan_to_num(np.power((1 - y_hat), gama) * np.log(y_hat)), axis=1))
+
+    @staticmethod
+    def backward(y_hat, y):
+        assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
+        assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
+        return (-np.power((1 - y_hat), gama - 1) * y_hat * gama * np.log(y_hat) - np.power((1 - y_hat), gama)) * (y - y_hat)
+
+
 # aliases from Keras
 mse = MSE = MeanSquareLoss
 cce = CCE = categorical_crossentropy = LogLikelihoodLoss
 bce = BCE = binary_crossentropy = BinaryCategoryLoss
+fce = FCE = FocalLoss
 
 
 def get(loss):
@@ -109,6 +135,8 @@ def get(loss):
             return CCE()
         elif loss in ('binary_crossentropy', 'bce', 'binarycategoryloss'):
             return BCE()
+        elif loss in ('fce', 'FCE', 'FocalLoss'):
+            return FCE()
         else:
             raise ValueError('Unknown loss name `{}`'.format(loss))
     elif isinstance(loss, Loss):
