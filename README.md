@@ -41,6 +41,7 @@ The light(\`light\` means not many codes here) deep learning framework for study
 * MeanSquareLoss
 * BinaryCategoryLoss
 * LogLikelihoodLoss
+* FocalLoss
 
 ### initializers
 
