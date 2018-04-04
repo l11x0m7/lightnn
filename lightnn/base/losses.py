@@ -108,7 +108,7 @@ class FocalLoss(Loss):
         assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
         y_hat = _cutoff(y_hat)
         y = _cutoff(y)
-        return -np.mean(np.sum(np.nan_to_num(np.power((1 - y_hat), gama) * np.log(y_hat)), axis=1))
+        return -np.mean(np.sum(np.nan_to_num(y * np.power((1 - y_hat), gama) * np.log(y_hat)), axis=1))
 
     @staticmethod
     def backward(y_hat, y):
