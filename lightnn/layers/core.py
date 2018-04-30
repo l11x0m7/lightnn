@@ -16,7 +16,7 @@ class FullyConnected(Layer):
     def __init__(self, output_dim, input_dim=None, activator='sigmoid',
                     initializer=xavier_uniform_initializer):
         """
-        全连接层，即Dense层。
+        全连接层，即Dense层
 
         # Params
         output_dim: 输出的维度，即当前层的神经元个数
@@ -106,10 +106,12 @@ class FullyConnected(Layer):
 
     def forward(self, inputs, *args, **kwargs):
         """
-        # Params
-        inputs: 2-D tensors, row represents samples, col represents features
+        全连接层的前向传播
 
-        # Return: None
+        # Params
+        inputs: 二维矩阵，行代表一个batch的大小，列代表特征
+
+        # Return: 经过该层的输出结果
         """
         inputs = np.asarray(inputs)
         if len(inputs.shape) == 1:
@@ -118,6 +120,7 @@ class FullyConnected(Layer):
         self.input_shape = inputs.shape
         self.output_shape[0] = self.input_shape[0]
         self.inputs = inputs
+        # 关键操作，主要是输入与参数矩阵W、偏置b之间的操作，以及激活函数
         self.logit = np.dot(self.inputs, self.W.T) + self.b
         self.output = self.activator.forward(self.logit)
         return self.output

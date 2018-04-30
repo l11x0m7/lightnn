@@ -73,9 +73,9 @@ class Conv2d(Layer):
         二维卷积层，考虑输入包含width于height（除去输入的batch size与depth）
 
         # Params
-        filter_size: (height, width)
+        filter_size: 格式为(height, width)，代表输入的每个filter的尺寸
         filter_num: filter个数
-        input_shape: (batch, height, width, depth)
+        input_shape: 格式为(batch, height, width, depth)，代表输入数据的形状
         zero_padding: zero-padding数, int or tuple
         stride: 步长，int or tuple, 可以输入(stride_height, stride_width) 或 stride
                         控制输出的feature map的大小
@@ -161,11 +161,12 @@ class Conv2d(Layer):
 
     def forward(self, input, *args, **kwargs):
         """
-        输入input，经过convolution layer后得到新的feature map
+        输入input，经过卷积后得到新的特征图(feature map)
 
         # Params
-        input: 输入的feature map
+        input: 输入的feature map，形状为(batch_size, height, width, depth)
 
+        # Return: 经过该层的输出结果
         """
         self.input = np.asarray(input)
         assert list(self.input_shape[1:]) == list(self.input.shape[1:])
@@ -176,13 +177,15 @@ class Conv2d(Layer):
         # add output
         self.output = np.zeros(self.output_shape)
         assert list(self.input.shape[1:]) == list(self.input_shape[1:])
+        # 如果需要补零padding，则进行padding操作
         self.padded_input = self._padding(self.input, self.zero_padding)
 
-        # 将每个filter作用在input上，得到filter_size个output的feature map
+        # 将每个filter作用在input样本上，得到filter_num个output的feature map
         for o_c, filter in enumerate(self.filters):
             filter_W = filter.W
             filter_b = filter.b
             for bn in xrange(self.input_shape[0]):
+                # 关键步骤，实现卷积
                 self._conv(self.padded_input[bn], filter_W,
                            self.logit[bn,:,:,o_c], filter_b, self.stride)
 
@@ -289,6 +292,7 @@ class Conv2d(Layer):
         f_height, f_width, _ = filter_W.shape
         bw = bh = 0
         eh = f_height; ew = f_width
+        # 卷积操作
         for idx_height in xrange(o_height):
             for idx_width in xrange(o_width):
                 if eh > i_height or ew > i_width:

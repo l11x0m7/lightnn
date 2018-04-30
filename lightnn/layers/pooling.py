@@ -67,6 +67,14 @@ class MaxPoolingLayer(Layer):
                              output_width, 1 if len(self.input_shape) == 3 else self.input_shape[3]]
 
     def forward(self, inputs, *args, **kwargs):
+        """
+        最大池化层的前向传播
+
+        # Params
+        inputs: 输入的数据
+
+        # Return: 返回该层的输出
+        """
         inputs = np.asarray(inputs)
         assert list(self.input_shape[1:]) == list(inputs.shape[1:])
         self.input_shape = inputs.shape
@@ -207,6 +215,14 @@ class AvgPoolingLayer(Layer):
                              output_width, 1 if len(self.input_shape) == 3 else self.input_shape[3]]
 
     def forward(self, inputs, *args, **kwargs):
+        """
+        平均池化层的前向传播
+
+        # Params
+        inputs: 输入的数据
+
+        # Return: 返回该层的输出
+        """
         inputs = np.asarray(inputs)
 
         assert list(self.input_shape[1:]) == list(inputs.shape[1:])

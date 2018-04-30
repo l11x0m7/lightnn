@@ -22,7 +22,6 @@ class Recurrent(Layer):
     follow the specifications of this class and accept
     the keyword arguments listed below.
     """
-
     def __init__(self, output_dim,
                  input_shape=None,
                  return_sequences=False,
@@ -69,6 +68,19 @@ class SimpleRNN(Recurrent):
                  use_bias=True,
                  return_sequences=False,
                  **kwargs):
+        """
+        基本的循环神经网络层
+
+        # Params
+        output_dim: 输出的维度，即当前层的神经元个数
+        input_shape: 输入的形状
+        activator: 激活函数
+        kernel_initializer: 输入与隐层的参数初始化方法
+        recurrent_initializer: 循环内部的参数初始化方法
+        bias_initializer: 偏置bias初始化方法
+        use_bias: 是否加偏置bias
+        return_sequences: 表示是否返回一整个序列
+        """
         super(SimpleRNN, self).__init__(output_dim, input_shape, return_sequences, **kwargs)
         self.activator = activations.get(activator)
         self.kernel_initializer = initializers.get(kernel_initializer)
@@ -156,6 +168,14 @@ class SimpleRNN(Recurrent):
             self.b = self.bias_initializer((self.output_dim, ))
 
     def forward(self, inputs, *args, **kwargs):
+        """
+        RNN单元的前向传播
+
+        # Params
+        inputs: 输入的数据
+
+        # Return: 返回该层的输出
+        """
         # clear states
         # inputs: batch_size, time_step, out_dim
         inputs = np.asarray(inputs)
@@ -167,6 +187,7 @@ class SimpleRNN(Recurrent):
         self.outputs = np.zeros((nb_batch, nb_seq, self.output_dim))
         self.logits = np.zeros((nb_batch, nb_seq, self.output_dim))
         pre_state = np.zeros((nb_batch, self.output_dim))
+        # 核心部分，对于每个时间步骤time step，根据当前输入与前一时刻输出，产生当前时刻输出
         for t in xrange(nb_seq):
             self.outputs[:,t,:] = self.inputs[:,t,:].dot(self.W) + pre_state.dot(self.U)
             if self.use_bias:
@@ -261,6 +282,19 @@ class LSTM(Recurrent):
                  use_bias=True,
                  return_sequences=False,
                  **kwargs):
+        """
+        LSTM单元
+
+        # Params
+        output_dim: 输出的维度，即当前层的神经元个数
+        input_shape: 输入的形状
+        activator: 激活函数
+        kernel_initializer: 输入与隐层的参数初始化方法
+        recurrent_initializer: 循环内部的参数初始化方法
+        bias_initializer: 偏置bias初始化方法
+        use_bias: 是否加偏置bias
+        return_sequences: 表示是否返回一整个序列
+        """
         super(LSTM, self).__init__(output_dim, input_shape, return_sequences, **kwargs)
         self.use_bias = use_bias
         self.activator = activations.get(activator)
@@ -724,6 +758,19 @@ class GRU(Recurrent):
                  use_bias=True,
                  return_sequences=False,
                  **kwargs):
+        """
+        GRU单元
+
+        # Params
+        output_dim: 输出的维度，即当前层的神经元个数
+        input_shape: 输入的形状
+        activator: 激活函数
+        kernel_initializer: 输入与隐层的参数初始化方法
+        recurrent_initializer: 循环内部的参数初始化方法
+        bias_initializer: 偏置bias初始化方法
+        use_bias: 是否加偏置bias
+        return_sequences: 表示是否返回一整个序列
+        """
         super(GRU, self).__init__(output_dim, input_shape, return_sequences, **kwargs)
         self.use_bias = use_bias
         self.activator = activations.get(activator)
